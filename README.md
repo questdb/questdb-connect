@@ -6,7 +6,7 @@ for [apache superset](https://github.com/apache/superset).
 ## Requirements
 
 * Python from 3.8.x no higher than 3.10.x
-* SQLAlchemy 2.x
+* SQLAlchemy 1.4.x
 * Apache Superset 2.x
 
 ## Developer installation
@@ -21,8 +21,8 @@ pip install -e .
 pip install -e '.[test]'
 ```
 
-[QuestDB 7.1.2](https://github.com/questdb/questdb/releases), or higher, is required and must be up and running.
-You can start QuestDB using the docker commands bellow.
+[QuestDB 7.1.2](https://github.com/questdb/questdb/releases), or higher, is required because it has support for 
+implicit cast String -> Long256, and must be up and running. You can start QuestDB using the docker commands bellow.
 
 ## Docker commands
 
