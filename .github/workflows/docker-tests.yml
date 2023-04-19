@@ -28,12 +28,13 @@ jobs:
         with:
           # network=host driver-opt needed to push to local registry
           driver-opts: network=host
-      - name: Build
+      - name: Build # todo: push
         uses: docker/build-push-action@v4
         with:
           context: .
           tags: questdb/questdb-connect:latest
-      - name: Run compose up
-        run: docker-compose up
-      - name: Run compose down
-        run: docker-compose down
+      - name: Run compose
+      - uses: isbang/compose-action@v1.4.1
+        with:
+          compose-file: "./docker-compose.yml"
+          down-flags: "--volumes"

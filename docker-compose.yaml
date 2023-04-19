@@ -37,9 +37,9 @@ services:
       - ./.questdb_data:/root/.questdb/db
 
   questdb-connect:
-    image: questdb/questdb-connect:latest
+    #image: questdb/questdb-connect:latest
     container_name: questdb_connect_tests
-    pull_policy: never
+    build: .
     environment:
       QUESTDB_CONNECT_HOST: "host.docker.internal"
     depends_on:
