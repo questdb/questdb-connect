@@ -28,7 +28,7 @@ jobs:
         with:
           # network=host driver-opt needed to push to local registry
           driver-opts: network=host
-      - name: Build # todo: push
+      - name: Build
         uses: docker/build-push-action@v4
         with:
           context: .
