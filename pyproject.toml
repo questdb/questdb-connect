@@ -1,0 +1,69 @@
+#
+#     ___                  _   ____  ____
+#    / _ \ _   _  ___  ___| |_|  _ \| __ )
+#   | | | | | | |/ _ \/ __| __| | | |  _ \
+#   | |_| | |_| |  __/\__ \ |_| |_| | |_) |
+#    \__\_\\__,_|\___||___/\__|____/|____/
+#
+#  Copyright (c) 2014-2019 Appsicle
+#  Copyright (c) 2019-2023 QuestDB
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+[project]
+name = "questdb-connect"
+version = "1.0.0"
+authors = [{ name = "questdb.io", email = "miguel@questdb.io" }]
+description = "SqlAlchemy/Superset libraries."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: Apache Software License',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11'
+]
+dependencies = [
+    'psycopg2-binary~=2.9.6',
+    'SQLAlchemy<=1.4.47',
+    'apache-superset>=2.1.0'
+]
+
+[project.entry-points.'sqlalchemy.dialects']
+questdb = 'questdb_connect.dialect:QuestDBDialect'
+#entry_points = {
+#    'superset.db_engine_specs': ['clickhousedb=clickhouse_connect.cc_superset.engine:ClickHouseEngineSpec']
+#}
+
+[project.optional-dependencies]
+test = [
+    'ruff~=0.0.261',
+    'pytest~=7.3.0'
+]
+
+[tool.ruff]
+# https://github.com/charliermarsh/ruff#configuration
+select = ["PL", "RUF", "TCH", "TID", "PT", "C4", "B", "S", "I"]
+line-length = 120
+exclude = [
+    ".pytest_cache",
+    ".questdb_data",
+    ".git",
+    ".ruff_cache",
+    "venv",
+    "questdb_connect.egg-info",
+]
+[tool.ruff.per-file-ignores]
+"tests/test_inserts.py" = ["S101"]

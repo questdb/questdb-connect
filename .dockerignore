@@ -1,0 +1,13 @@
+.idea
+.git
+.github
+.gitignore
+.pytest_cache
+.dockerignore
+.python-version
+.questdb_data
+venv
+Dockerfile
+questdb_connect.egg-info
+superset_toolkit
+Makefile

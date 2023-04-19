@@ -1,0 +1,10 @@
+.pytest_cache
+.questdb_data
+.python-version
+venv
+.idea
+.env
+*.pyc
+*.pyd
+questdb_connect.egg-info
+__pycache__
