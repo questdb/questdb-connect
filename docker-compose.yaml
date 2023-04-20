@@ -37,7 +37,6 @@ services:
       - ./.questdb_data:/root/.questdb/db
 
   questdb-connect:
-    #image: questdb/questdb-connect:latest
     container_name: questdb_connect_tests
     build: .
     environment:

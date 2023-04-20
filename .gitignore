@@ -8,3 +8,4 @@ venv
 *.pyd
 questdb_connect.egg-info
 __pycache__
+dist

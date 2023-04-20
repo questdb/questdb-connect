@@ -40,23 +40,31 @@ class TestConfig(NamedTuple):
     port: int
     username: str
     password: str
-    __test__ = False
+    database: str
+    __test__ = True
 
 
 @pytest.fixture(scope='session', autouse=True, name='test_config')
 def test_config_fixture() -> TestConfig:
-    host = os.environ.get('QUESTDB_CONNECT_HOST', 'localhost')
-    port = int(os.environ.get('QUESTDB_CONNECT_PORT', '8812'))
-    username = os.environ.get('QUESTDB_CONNECT_USER', 'admin')
-    password = os.environ.get('QUESTDB_CONNECT_PASSWORD', 'quest')
-    return TestConfig(host, port, username, password)
+    return TestConfig(
+        host=os.environ.get('QUESTDB_CONNECT_HOST', 'localhost'),
+        port=int(os.environ.get('QUESTDB_CONNECT_PORT', '8812')),
+        username=os.environ.get('QUESTDB_CONNECT_USER', 'admin'),
+        password=os.environ.get('QUESTDB_CONNECT_PASSWORD', 'quest'),
+        database=os.environ.get('QUESTDB_CONNECT_DATABASE', 'main')
+    )
 
 
 @pytest.fixture(scope='module', name='test_engine')
 def test_engine_fixture(test_config: TestConfig):
     engine = None
     try:
-        engine = qdbc.create_engine(test_config.host, test_config.port, test_config.username, test_config.password)
+        engine = qdbc.create_engine(
+            test_config.host,
+            test_config.port,
+            test_config.username,
+            test_config.password,
+            test_config.database)
         return engine
     finally:
         if engine:

@@ -39,7 +39,8 @@ def main():
     port = int(os.environ.get('QUESTDB_CONNECT_PORT', '8812'))
     username = os.environ.get('QUESTDB_CONNECT_USER', 'admin')
     password = os.environ.get('QUESTDB_CONNECT_PASSWORD', 'quest')
-    engine = qdbc.create_engine(host, port, username, password)
+    database = os.environ.get('QUESTDB_CONNECT_DATABASE', 'main')
+    engine = qdbc.create_engine(host, port, username, password, database)
     try:
         Base = declarative_base(metadata=sqla.MetaData())
 

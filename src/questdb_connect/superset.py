@@ -214,8 +214,8 @@ class QDBEngineSpec(PostgresBaseEngineSpec, BasicParametersMixin):
             parameters["host"],
             int(parameters["port"]),
             parameters.get("username"),
-            parameters.get("password")
-        )
+            parameters.get("password"),
+            parameters.get("database"))
 
     @classmethod
     def epoch_to_dttm(cls) -> str:

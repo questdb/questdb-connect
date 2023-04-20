@@ -34,4 +34,5 @@ def connect(**kwargs):
     port = kwargs.get('port') or 8812
     user = kwargs.get('username') or 'admin'
     passwd = kwargs.get('password') or 'quest'
-    return psycopg2.connect(host=host, port=port, user=user, password=passwd)
+    database = kwargs.get('database') or 'main'
+    return psycopg2.connect(host=host, port=port, user=user, password=passwd, database=database)

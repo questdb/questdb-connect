@@ -102,3 +102,18 @@ The server's root directory is:
     4. Open a browser [http://localhost:8088](http://localhost:8088)
 
 While running, the server will reload on modification of the python and JavaScript source code.
+
+## Build wheel and publish it
+
+Follow the guidelines in [https://packaging.python.org/en/latest/tutorials/packaging-projects/](https://packaging.python.org/en/latest/tutorials/packaging-projects/).
+
+
+```shell
+python3 -m pip install --upgrade build
+python3 -m build
+
+python3 -m pip install --upgrade twine
+python3 -m twine upload dist/*
+```
+
+questdb://admin:quest@host.docker.internal:8812/main

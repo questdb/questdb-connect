@@ -119,7 +119,7 @@ _GEOHASH_MAX_BITS = 60
 def geohash_type(bits: int):
     """Factory for Geohash(<bits>b) types"""
     if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_MAX_BITS:
-        raise AttributeError(f'bits shoultdbe an int [0, {_GEOHASH_MAX_BITS}]')
+        raise AttributeError(f'bits should be of type int [0, {_GEOHASH_MAX_BITS}]')
 
     class GeohashWithPrecision(sqla.String, QDBType):
         __visit_name__ = f'GEOHASH({bits}b)'
@@ -130,12 +130,12 @@ def geohash_type(bits: int):
 
 # ===== SQLAlchemy Dialect ======
 
-def connection_uri(host: str, port: int, username: str, password: str):
-    return f'questdb://{username}:{password}@{host}:{port}/main'
+def connection_uri(host: str, port: int, username: str, password: str, database: str = 'main'):
+    return f'questdb://{username}:{password}@{host}:{port}/{database}'
 
 
-def create_engine(host: str, port: int, username: str, password: str):
-    return sqla.create_engine(connection_uri(host, port, username, password))
+def create_engine(host: str, port: int, username: str, password: str, database: str = 'main'):
+    return sqla.create_engine(connection_uri(host, port, username, password, database))
 
 
 class QDBEngine(SchemaEventTarget):
