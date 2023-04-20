@@ -51,7 +51,6 @@ questdb = 'questdb_connect.superset:QDBEngineSpec'
 test = [
     'ruff~=0.0.261',
     'pytest~=7.3.0',
-    'Flask-Testing~=0.8.1'
 ]
 
 [tool.ruff]
