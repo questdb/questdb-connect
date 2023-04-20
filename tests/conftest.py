@@ -23,6 +23,7 @@
 import os
 import time
 from typing import NamedTuple
+
 import pytest
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.orm import declarative_base

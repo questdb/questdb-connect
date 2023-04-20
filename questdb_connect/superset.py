@@ -22,9 +22,9 @@
 #
 import logging
 import re
-
 from datetime import datetime
 from typing import Dict, Optional
+
 from superset.db_engine_specs.base import BasicParametersMixin, BasicParametersType
 from superset.db_engine_specs.postgres import PostgresBaseEngineSpec
 from superset.utils.core import GenericDataType
