@@ -24,12 +24,12 @@ import os
 import time
 from typing import NamedTuple
 
+os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
+
 import pytest
+import questdb_connect.dialect as qdbc
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.orm import declarative_base
-
-import questdb_connect as qdbc
-from questdb_connect.dialect import QDBEngine, create_engine
 
 os.environ['TZ'] = 'UTC'
 time.tzset()
@@ -56,7 +56,7 @@ def test_config_fixture() -> TestConfig:
 def test_engine_fixture(test_config: TestConfig):
     engine = None
     try:
-        engine = create_engine(test_config.host, test_config.port, test_config.username, test_config.password)
+        engine = qdbc.create_engine(test_config.host, test_config.port, test_config.username, test_config.password)
         return engine
     finally:
         if engine:
@@ -70,7 +70,7 @@ def test_model_fixture(test_engine):
 
     class TableModel(Base):
         __tablename__ = 'all_types_table'
-        __table_args__ = (QDBEngine(ts_col_name='col_ts', partition_by=qdbc.PartitionBy.DAY, is_wal=True),)
+        __table_args__ = (qdbc.QDBEngine(ts_col_name='col_ts', partition_by=qdbc.PartitionBy.DAY, is_wal=True),)
         col_boolean = Column(qdbc.Boolean)
         col_byte = Column(qdbc.Byte)
         col_short = Column(qdbc.Short)

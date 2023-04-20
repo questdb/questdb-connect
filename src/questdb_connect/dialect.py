@@ -21,6 +21,7 @@
 #  limitations under the License.
 #
 import abc
+import enum
 
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
@@ -28,10 +29,106 @@ from sqlalchemy.exc import ArgumentError
 from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
 
-from questdb_connect import PartitionBy, QDBType
-
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
 
+
+# ===== QUESTDB PARTITION TYPE =====
+
+class PartitionBy(enum.Enum):
+    DAY = 0
+    MONTH = 1
+    YEAR = 2
+    NONE = 3
+    HOUR = 4
+    WEEK = 5
+
+
+# ===== QUESTDB DATA TYPES =====
+
+class QDBType:
+    """Base class for all questdb_connect types"""
+    __visit_name__ = 'QuestDBType'
+
+    def column_spec(self, column_name: str):
+        return f"'{column_name}' {self.__visit_name__}"
+
+
+class Boolean(sqla.Boolean, QDBType):
+    __visit_name__ = 'BOOLEAN'
+
+
+class Byte(sqla.Integer, QDBType):
+    __visit_name__ = 'BYTE'
+
+
+class Short(sqla.Integer, QDBType):
+    __visit_name__ = 'SHORT'
+
+
+class Int(sqla.Integer, QDBType):
+    __visit_name__ = 'INT'
+
+
+class Integer(Int):
+    pass
+
+
+class Long(sqla.Integer, QDBType):
+    __visit_name__ = 'LONG'
+
+
+class Float(sqla.Float, QDBType):
+    __visit_name__ = 'FLOAT'
+
+
+class Double(sqla.Float, QDBType):
+    __visit_name__ = 'DOUBLE'
+
+
+class Symbol(sqla.String, QDBType):
+    __visit_name__ = 'SYMBOL'
+
+
+class String(sqla.String, QDBType):
+    __visit_name__ = 'STRING'
+
+
+class Char(sqla.String, QDBType):
+    __visit_name__ = 'CHAR'
+
+
+class Long256(sqla.String, QDBType):
+    __visit_name__ = 'LONG256'
+
+
+class UUID(sqla.String, QDBType):
+    __visit_name__ = 'UUID'
+
+
+class Date(sqla.Date, QDBType):
+    __visit_name__ = 'DATE'
+
+
+class Timestamp(sqla.DateTime, QDBType):
+    __visit_name__ = 'TIMESTAMP'
+
+
+_GEOHASH_MAX_BITS = 60
+
+
+def geohash_type(bits: int):
+    """Factory for Geohash(<bits>b) types"""
+    if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_MAX_BITS:
+        raise AttributeError(f'bits shoultdbe an int [0, {_GEOHASH_MAX_BITS}]')
+
+    class GeohashWithPrecision(sqla.String, QDBType):
+        __visit_name__ = f'GEOHASH({bits}b)'
+        bit_precision = bits
+
+    return GeohashWithPrecision
+
+
+# ===== SQLAlchemy Dialect ======
 
 def connection_uri(host: str, port: int, username: str, password: str):
     return f'questdb://{username}:{password}@{host}:{port}/main'
@@ -175,7 +272,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         return []
 
-    def has_table(self, connection, table_name, schema, **_kw):
+    def has_table(self, connection, table_name, schema=None):
         query = f"tables() WHERE name='{table_name}'"
         result = connection.execute(sqla.text(query))
         return result.rowcount == 1

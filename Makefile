@@ -47,7 +47,7 @@ docker-push:
 	docker push questdb/questdb-connect:latest
 
 compose-up:
-	docker-compose up -d
+	docker-compose up
 
 compose-down:
 	docker-compose down --remove-orphans
@@ -59,7 +59,7 @@ docker-test:
 
 test:
 	python3 -m pytest
-	python3 -m ruff check questdb_connect
+	python3 -m ruff check src/questdb_connect
 	python3 -m ruff check examples
 	python3 -m ruff check tests
 

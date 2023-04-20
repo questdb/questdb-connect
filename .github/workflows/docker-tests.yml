@@ -28,11 +28,6 @@ jobs:
         with:
           # network=host driver-opt needed to push to local registry
           driver-opts: network=host
-      - name: Build
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          tags: questdb/questdb-connect:latest
       - name: Run compose
         uses: isbang/compose-action@v1.4.1
         with:

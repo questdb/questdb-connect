@@ -23,13 +23,14 @@
 import datetime
 import json
 import os
+import time
 
+os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
+
+import questdb_connect.dialect as qdbc
 import sqlalchemy as sqla
 from sqlalchemy import Column
 from sqlalchemy.orm import declarative_base
-
-import questdb_connect as qdbc
-from questdb_connect.dialect import QDBEngine, create_engine
 
 
 def main():
@@ -38,14 +39,14 @@ def main():
     port = int(os.environ.get('QUESTDB_CONNECT_PORT', '8812'))
     username = os.environ.get('QUESTDB_CONNECT_USER', 'admin')
     password = os.environ.get('QUESTDB_CONNECT_PASSWORD', 'quest')
-    engine = create_engine(host, port, username, password)
+    engine = qdbc.create_engine(host, port, username, password)
     try:
         Base = declarative_base(metadata=sqla.MetaData())
 
         class MyTable(Base):
             __tablename__ = 'all_types'
             __table_args__ = (
-                QDBEngine(ts_col_name='col_ts', partition_by=qdbc.PartitionBy.DAY, is_wal=True),)
+                qdbc.QDBEngine(ts_col_name='col_ts', partition_by=qdbc.PartitionBy.DAY, is_wal=True),)
             col_boolean = Column(qdbc.Boolean)
             col_byte = Column(qdbc.Byte)
             col_short = Column(qdbc.Short)
@@ -63,9 +64,18 @@ def main():
             col_long256 = Column(qdbc.Long256)
 
         # delete any previous existing 'all_types' table
-        Base.metadata.drop_all(engine)
+        while True:
+            try:
+                Base.metadata.drop_all(engine)
+                break
+            except Exception as see:
+                if "Connection refused" in str(see.orig):
+                    print(f"awaiting for QuestDB to start")
+                    time.sleep(3)
+                else:
+                    raise see
 
-        # create the 'all_types' table
+                    # create the 'all_types' table
         Base.metadata.create_all(engine)
 
         # connect with QuestDB

@@ -6,7 +6,7 @@
 #    \__\_\\__,_|\___||___/\__|____/|____/
 #
 #  Copyright (c) 2014-2019 Appsicle
-#  Copyright (c) 2019-2020 QuestDB
+#  Copyright (c) 2019-2023 QuestDB
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,32 +20,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-version: "3.8"
+import psycopg2
 
-services:
-  questdb:
-    image: questdb/questdb:latest
-    container_name: questdb_connect
-    pull_policy: never
-    ports:
-      - "8812:8812"
-      - "9000:9000"
-      - "9009:9009"
-    networks:
-      - questdb
-    volumes:
-      - ./.questdb_data:/root/.questdb/db
+# ===== DBAPI =====
 
-  questdb-connect:
-    #image: questdb/questdb-connect:latest
-    container_name: questdb_connect_tests
-    build: .
-    environment:
-      QUESTDB_CONNECT_HOST: "questdb"
-    depends_on:
-      - questdb
-    networks:
-      - questdb
+apilevel = '2.0'
+threadsafety = 2
+paramstyle = 'pyformat'
 
-networks:
-  questdb:
+
+def connect(**kwargs):
+    host = kwargs.get('host') or '127.0.0.1'
+    port = kwargs.get('port') or 8812
+    user = kwargs.get('username') or 'admin'
+    passwd = kwargs.get('password') or 'quest'
+    return psycopg2.connect(host=host, port=port, user=user, password=passwd)

@@ -20,9 +20,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+# https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
 [project]
 name = "questdb-connect"
-version = "1.0.0"
+version = "0.0.1"
 authors = [{ name = "questdb.io", email = "miguel@questdb.io" }]
 description = "SqlAlchemy/Superset libraries."
 readme = "README.md"
@@ -40,6 +41,10 @@ dependencies = [
     'SQLAlchemy<=1.4.47',
     'apache-superset>=2.1.0'
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/questdb/questdb-connect/"
+"Bug Tracker" = "https://github.com/questdb/questdb-connect/issues/"
 
 [project.entry-points.'sqlalchemy.dialects']
 questdb = 'questdb_connect.dialect:QuestDBDialect'
