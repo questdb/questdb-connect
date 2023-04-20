@@ -22,8 +22,7 @@
 #
 import os
 import time
-from typing import Iterator, NamedTuple
-
+from typing import NamedTuple
 import pytest
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.orm import declarative_base
@@ -44,7 +43,7 @@ class TestConfig(NamedTuple):
 
 
 @pytest.fixture(scope='session', autouse=True, name='test_config')
-def test_config_fixture() -> Iterator[TestConfig]:
+def test_config_fixture() -> TestConfig:
     host = os.environ.get('QUESTDB_CONNECT_HOST', 'localhost')
     port = int(os.environ.get('QUESTDB_CONNECT_PORT', '8812'))
     username = os.environ.get('QUESTDB_CONNECT_USER', 'admin')
