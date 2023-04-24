@@ -25,11 +25,24 @@ import enum
 
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
+from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import ArgumentError
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
+from sqlalchemy.sql.visitors import Traversible
 
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
+
+
+# ===== SQLAlchemy Dialect ======
+
+def connection_uri(host: str, port: int, username: str, password: str, database: str = 'main'):
+    return f'questdb://{username}:{password}@{host}:{port}/{database}'
+
+
+def create_engine(host: str, port: int, username: str, password: str, database: str = 'main'):
+    return sqla.create_engine(connection_uri(host, port, username, password, database))
 
 
 # ===== QUESTDB PARTITION TYPE =====
@@ -45,7 +58,7 @@ class PartitionBy(enum.Enum):
 
 # ===== QUESTDB DATA TYPES =====
 
-class QDBType:
+class QDBTypeMixin:
     """Base class for all questdb_connect types"""
     __visit_name__ = 'QuestDBType'
 
@@ -53,19 +66,19 @@ class QDBType:
         return f"'{column_name}' {self.__visit_name__}"
 
 
-class Boolean(sqla.Boolean, QDBType):
+class Boolean(sqla.Boolean, QDBTypeMixin):
     __visit_name__ = 'BOOLEAN'
 
 
-class Byte(sqla.Integer, QDBType):
+class Byte(sqla.Integer, QDBTypeMixin):
     __visit_name__ = 'BYTE'
 
 
-class Short(sqla.Integer, QDBType):
+class Short(sqla.Integer, QDBTypeMixin):
     __visit_name__ = 'SHORT'
 
 
-class Int(sqla.Integer, QDBType):
+class Int(sqla.Integer, QDBTypeMixin):
     __visit_name__ = 'INT'
 
 
@@ -73,43 +86,43 @@ class Integer(Int):
     pass
 
 
-class Long(sqla.Integer, QDBType):
+class Long(sqla.Integer, QDBTypeMixin):
     __visit_name__ = 'LONG'
 
 
-class Float(sqla.Float, QDBType):
+class Float(sqla.Float, QDBTypeMixin):
     __visit_name__ = 'FLOAT'
 
 
-class Double(sqla.Float, QDBType):
+class Double(sqla.Float, QDBTypeMixin):
     __visit_name__ = 'DOUBLE'
 
 
-class Symbol(sqla.String, QDBType):
+class Symbol(sqla.String, QDBTypeMixin):
     __visit_name__ = 'SYMBOL'
 
 
-class String(sqla.String, QDBType):
+class String(sqla.String, QDBTypeMixin):
     __visit_name__ = 'STRING'
 
 
-class Char(sqla.String, QDBType):
+class Char(sqla.String, QDBTypeMixin):
     __visit_name__ = 'CHAR'
 
 
-class Long256(sqla.String, QDBType):
+class Long256(sqla.String, QDBTypeMixin):
     __visit_name__ = 'LONG256'
 
 
-class UUID(sqla.String, QDBType):
+class UUID(sqla.String, QDBTypeMixin):
     __visit_name__ = 'UUID'
 
 
-class Date(sqla.Date, QDBType):
+class Date(sqla.Date, QDBTypeMixin):
     __visit_name__ = 'DATE'
 
 
-class Timestamp(sqla.DateTime, QDBType):
+class Timestamp(sqla.DateTime, QDBTypeMixin):
     __visit_name__ = 'TIMESTAMP'
 
 
@@ -121,30 +134,73 @@ def geohash_type(bits: int):
     if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_MAX_BITS:
         raise AttributeError(f'bits should be of type int [0, {_GEOHASH_MAX_BITS}]')
 
-    class GeohashWithPrecision(sqla.String, QDBType):
+    class GeohashWithPrecision(sqla.String, QDBTypeMixin):
         __visit_name__ = f'GEOHASH({bits}b)'
         bit_precision = bits
 
     return GeohashWithPrecision
 
 
-# ===== SQLAlchemy Dialect ======
+def resolve_type_from_name(type_name):
+    if not type_name:
+        return None
+    name_u = type_name.upper()
+    qdbc_type = None
+    if name_u == 'BOOLEAN':
+        qdbc_type = Boolean
+    elif name_u == 'BYTE':
+        qdbc_type = Byte
+    elif name_u == 'SHORT':
+        qdbc_type = Short
+    elif name_u == 'INT' or name_u == 'INTEGER':
+        qdbc_type = Int
+    elif name_u == 'LONG':
+        qdbc_type = Long
+    elif name_u == 'FLOAT':
+        qdbc_type = Float
+    elif name_u == 'DOUBLE':
+        qdbc_type = Double
+    elif name_u == 'SYMBOL':
+        qdbc_type = Symbol
+    elif name_u == 'STRING':
+        qdbc_type = String
+    elif name_u == 'TEXT':
+        qdbc_type = String
+    elif name_u == 'VARCHAR':
+        qdbc_type = String
+    elif name_u == 'CHAR':
+        qdbc_type = Char
+    elif name_u == 'LONG256':
+        qdbc_type = Long256
+    elif name_u == 'UUID':
+        qdbc_type = UUID
+    elif name_u == 'DATE':
+        qdbc_type = Date
+    elif name_u == 'TIMESTAMP':
+        qdbc_type = Timestamp
+    elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
+        open_p = name_u.index('(')
+        close_p = name_u.index(')')
+        description = name_u[open_p + 1:close_p]
+        bits = int(description[:-1])
+        if description[-1].upper() == 'C':
+            bits *= 5
+        qdbc_type = geohash_type(bits)
+    return qdbc_type
 
-def connection_uri(host: str, port: int, username: str, password: str, database: str = 'main'):
-    return f'questdb://{username}:{password}@{host}:{port}/{database}'
 
+# ===== QUESTDB ENGINE =====
 
-def create_engine(host: str, port: int, username: str, password: str, database: str = 'main'):
-    return sqla.create_engine(connection_uri(host, port, username, password, database))
-
-
-class QDBEngine(SchemaEventTarget):
+class QDBTableEngine(SchemaEventTarget, Traversible):
     def __init__(
             self,
+            table_name: str,
             ts_col_name: str = None,
             partition_by: PartitionBy = PartitionBy.DAY,
             is_wal: bool = True
     ):
+        Traversible.__init__(self)
+        self.name = table_name
         self.ts_col_name = ts_col_name
         self.partition_by = partition_by
         self.is_wal = is_wal
@@ -172,6 +228,9 @@ class QDBEngine(SchemaEventTarget):
 
     def _set_parent(self, parent, **_kwargs):
         parent.engine = self
+
+
+# ===== QUESTDB DIALECT TYPES =====
 
 
 _QUOTES = ("'", '"')
@@ -211,7 +270,7 @@ class QDBDDLCompiler(DDLCompiler):
         return create_table + ') ' + table.engine.get_table_suffix()
 
     def get_column_specification(self, column: sqla.Column, **_):
-        if not isinstance(column.type, QDBType):
+        if not isinstance(column.type, QDBTypeMixin):
             raise ArgumentError('Column type is not a valid QuestDB type')
         return column.type.column_spec(column.name)
 
@@ -221,6 +280,62 @@ class QDBSQLCompiler(SQLCompiler):
         return True
 
 
+class QDBInspector(Inspector):
+    def reflecttable(
+            self,
+            table,
+            include_columns,
+            exclude_columns=(),
+            resolve_fks=True,
+            _extend_on=None,
+    ):
+        # backward compatibility SQLAlchemy 1.3
+        return self.reflect_table(table, include_columns, exclude_columns, resolve_fks, _extend_on)
+
+    def reflect_table(
+            self,
+            table,
+            include_columns=None,
+            exclude_columns=None,
+            resolve_fks=False,
+            _extend_on=None,
+    ):
+        table_name = table.name
+        result_set = self.bind.execute(f"tables() WHERE name = '{table_name}'")
+        if not result_set:
+            raise NoResultFound(f"Table '{table_name}' does not exist")
+        table_attrs = result_set.first()
+        col_ts_name = table_attrs['designatedTimestamp']
+        partition_by = PartitionBy[table_attrs['partitionBy']]
+        is_wal = table_attrs['walEnabled'] == True
+        for row in self.bind.execute(f"table_columns('{table_name}')"):
+            col_name = row[0]
+            if include_columns and col_name not in include_columns:
+                continue
+            if exclude_columns and col_name in exclude_columns:
+                continue
+            col_type = resolve_type_from_name(row[1])
+            if col_ts_name and col_ts_name.upper() == col_name.upper():
+                table.append_column(sqla.Column(col_name, col_type, primary_key=True))
+            else:
+                table.append_column(sqla.Column(col_name, col_type))
+        table.engine = QDBTableEngine(table_name, col_ts_name, partition_by, is_wal)
+        table.metadata = sqla.MetaData()
+
+    def get_columns(self, table_name, schema=None, **kw):
+        result_set = self.bind.execute(f"table_columns('{table_name}')")
+        if not result_set:
+            raise NoResultFound(f"Table '{table_name}' does not exist")
+        return [{
+            'name': row[0],
+            'type': resolve_type_from_name(row[1]),
+            'nullable': True,
+            'autoincrement': False,
+            'persisted': True
+        } for row in result_set]
+
+
+# class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
 class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     name = 'questdb'
     psycopg2_version = (2, 9)
@@ -228,6 +343,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     statement_compiler = QDBSQLCompiler
     ddl_compiler = QDBDDLCompiler
     type_compiler = GenericTypeCompiler
+    inspector = QDBInspector
     preparer = QDBIdentifierPreparer
     supports_schemas = False
     supports_statement_cache = False
@@ -235,9 +351,19 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     supports_views = False
     supports_empty_insert = False
     supports_multivalues_insert = True
+    supports_comments = True
     inline_comments = False
     postfetch_lastrowid = False
+    non_native_boolean_check_constraint = False
     max_identifier_length = 255
+    _user_defined_max_identifier_length = 255
+    supports_multivalues_insert = True
+    supports_is_distinct_from = False
+
+    @classmethod
+    def dbapi(cls):
+        import questdb_connect as dbapi
+        return dbapi
 
     def get_schema_names(self, connection, **kw):
         return ['public']

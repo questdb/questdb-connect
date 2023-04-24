@@ -44,10 +44,12 @@ def main():
     try:
         Base = declarative_base(metadata=sqla.MetaData())
 
+        table_name = 'all_types'
+
         class MyTable(Base):
-            __tablename__ = 'all_types'
+            __tablename__ = table_name
             __table_args__ = (
-                qdbc.QDBEngine(ts_col_name='col_ts', partition_by=qdbc.PartitionBy.DAY, is_wal=True),)
+                qdbc.QDBTableEngine(table_name, 'col_ts', qdbc.PartitionBy.DAY, is_wal=True),)
             col_boolean = Column(qdbc.Boolean)
             col_byte = Column(qdbc.Byte)
             col_short = Column(qdbc.Short)

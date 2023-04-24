@@ -29,6 +29,10 @@ threadsafety = 2
 paramstyle = 'pyformat'
 
 
+class Error(Exception):
+    pass
+
+
 def connect(**kwargs):
     host = kwargs.get('host') or '127.0.0.1'
     port = kwargs.get('port') or 8812

@@ -34,6 +34,8 @@ from sqlalchemy.orm import declarative_base
 os.environ['TZ'] = 'UTC'
 time.tzset()
 
+TEST_TABLE_NAME = 'all_types_table'
+
 
 class TestConfig(NamedTuple):
     host: str
@@ -77,32 +79,32 @@ def test_model_fixture(test_engine):
     Base = declarative_base(metadata=MetaData())
 
     class TableModel(Base):
-        __tablename__ = 'all_types_table'
-        __table_args__ = (qdbc.QDBEngine(ts_col_name='col_ts', partition_by=qdbc.PartitionBy.DAY, is_wal=True),)
-        col_boolean = Column(qdbc.Boolean)
-        col_byte = Column(qdbc.Byte)
-        col_short = Column(qdbc.Short)
-        col_int = Column(qdbc.Int)
-        col_long = Column(qdbc.Long)
-        col_float = Column(qdbc.Float)
-        col_double = Column(qdbc.Double)
-        col_symbol = Column(qdbc.Symbol)
-        col_string = Column(qdbc.String)
-        col_char = Column(qdbc.Char)
-        col_uuid = Column(qdbc.UUID)
-        col_date = Column(qdbc.Date)
-        col_ts = Column(qdbc.Timestamp, primary_key=True)
-        col_geohash = Column(qdbc.geohash_type(40))
-        col_long256 = Column(qdbc.Long256)
+        __tablename__ = TEST_TABLE_NAME
+        __table_args__ = (qdbc.QDBTableEngine(TEST_TABLE_NAME, 'col_ts', qdbc.PartitionBy.DAY, is_wal=True),)
+        col_boolean = Column('col_boolean', qdbc.Boolean)
+        col_byte = Column('col_byte', qdbc.Byte)
+        col_short = Column('col_short', qdbc.Short)
+        col_int = Column('col_int', qdbc.Int)
+        col_long = Column('col_long', qdbc.Long)
+        col_float = Column('col_float', qdbc.Float)
+        col_double = Column('col_double', qdbc.Double)
+        col_symbol = Column('col_symbol', qdbc.Symbol)
+        col_string = Column('col_string', qdbc.String)
+        col_char = Column('col_char', qdbc.Char)
+        col_uuid = Column('col_uuid', qdbc.UUID)
+        col_date = Column('col_date', qdbc.Date)
+        col_ts = Column('col_ts', qdbc.Timestamp, primary_key=True)
+        col_geohash = Column('col_geohash', qdbc.geohash_type(40))
+        col_long256 = Column('col_long256', qdbc.Long256)
 
     TableModel.metadata.drop_all(test_engine)
     TableModel.metadata.create_all(test_engine)
     return TableModel
 
 
-def collect_select_all(conn, expected_rows) -> str:
+def collect_select_all(session, expected_rows) -> str:
     while True:
-        rs = conn.execute(text('all_types_table'))
+        rs = session.execute(text('all_types_table'))
         if rs.rowcount == expected_rows:
             return '\n'.join(str(row) for row in rs)
 

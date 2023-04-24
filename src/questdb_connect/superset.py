@@ -25,8 +25,7 @@ import re
 from datetime import datetime
 from typing import Dict, Optional
 
-from superset.db_engine_specs.base import BasicParametersMixin, BasicParametersType
-from superset.db_engine_specs.postgres import PostgresBaseEngineSpec
+from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
 from superset.utils.core import GenericDataType
 
 import questdb_connect as qdbc
@@ -40,16 +39,15 @@ logger = logging.getLogger(__name__)
 # https://preset.io/blog/building-database-connector/
 
 
-class QDBEngineSpec(PostgresBaseEngineSpec, BasicParametersMixin):
+class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     engine = 'questdb'
     engine_name = 'QuestDB Connect'
     default_driver = "psycopg2"
-    engine_aliases = {}
-    # https://www.postgresql.org/docs/9.1/libpq-ssl.html#LIBQ-SSL-CERTIFICATES
     encryption_parameters = {"sslmode": "require"}
-    max_column_name_length = 250
+    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname[?key=value&key=value...]"
     time_groupby_inline = True
     time_secondary_columns = True
+    max_column_name_length = 120
     _time_grain_expressions = {
         None: '{col}',
         'PT1S': "date_trunc('second', {col})",
@@ -199,10 +197,7 @@ class QDBEngineSpec(PostgresBaseEngineSpec, BasicParametersMixin):
             qdbc.Date(),
             GenericDataType.TEMPORAL,
         ),
-
     )
-
-    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname[?key=value&key=value...]"
 
     @classmethod
     def build_sqlalchemy_uri(
@@ -211,8 +206,8 @@ class QDBEngineSpec(PostgresBaseEngineSpec, BasicParametersMixin):
             encrypted_extra: Optional[Dict[str, str]] = None
     ) -> str:
         return connection_uri(
-            parameters["host"],
-            int(parameters["port"]),
+            parameters.get("host"),
+            int(parameters.get("port")),
             parameters.get("username"),
             parameters.get("password"),
             parameters.get("database"))

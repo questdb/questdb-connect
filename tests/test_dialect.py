@@ -22,15 +22,16 @@
 #
 import datetime
 
+import questdb_connect.dialect as qdbc
 import sqlalchemy as sqla
 from sqlalchemy.orm import Session
 
-from tests.conftest import collect_select_all, collect_select_all_raw_connection
+from tests.conftest import TEST_TABLE_NAME, collect_select_all, collect_select_all_raw_connection
 
 
 def test_insert(test_engine, test_model):
     with test_engine.connect() as conn:
-        assert test_engine.dialect.has_table(conn, 'all_types_table', 'public')
+        assert test_engine.dialect.has_table(conn, TEST_TABLE_NAME, 'public')
         assert not test_engine.dialect.has_table(conn, 'scorchio', 'public')
         now = datetime.datetime(2023, 4, 12, 23, 55, 59, 342380)
         now_date = now.date()
@@ -80,6 +81,54 @@ def test_insert(test_engine, test_model):
         })
         assert collect_select_all(conn, expected_rows=2) == expected
     assert collect_select_all_raw_connection(test_engine, expected_rows=2) == expected
+
+
+def test_inspect(test_engine, test_model):
+    now = datetime.datetime(2023, 4, 12, 23, 55, 59, 342380)
+    now_date = now.date()
+    session = Session(test_engine)
+    try:
+        session.add(test_model(
+            col_boolean=True,
+            col_byte=8,
+            col_short=12,
+            col_int=0,
+            col_long=14,
+            col_float=15.234,
+            col_double=16.88993244,
+            col_symbol='coconut',
+            col_string='banana',
+            col_char='C',
+            col_uuid='6d5eb038-63d1-4971-8484-30c16e13de5b',
+            col_date=now_date,
+            col_ts=now,
+            col_geohash='dfvgsj2vptwu',
+            col_long256='0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a'
+        ))
+        session.commit()
+    finally:
+        if session:
+            session.close()
+    metadata = sqla.MetaData()
+    table = sqla.Table(TEST_TABLE_NAME, metadata, autoload_with=test_engine)
+    table_columns = str([(col.name, col.type, col.primary_key) for col in table.columns])
+    assert table_columns == str([
+        ('col_boolean', qdbc.Boolean(), False),
+        ('col_byte', qdbc.Byte(), False),
+        ('col_short', qdbc.Short(), False),
+        ('col_int', qdbc.Int(), False),
+        ('col_long', qdbc.Long(), False),
+        ('col_float', qdbc.Float(), False),
+        ('col_double', qdbc.Double(), False),
+        ('col_symbol', qdbc.Symbol(), False),
+        ('col_string', qdbc.String(), False),
+        ('col_char', qdbc.Char(), False),
+        ('col_uuid', qdbc.UUID(), False),
+        ('col_date', qdbc.Date(), False),
+        ('col_ts', qdbc.Timestamp(), True),
+        ('col_geohash', qdbc.geohash_type(40)(), False),
+        ('col_long256', qdbc.Long256(), False)
+    ])
 
 
 def test_multiple_insert(test_engine, test_model):
