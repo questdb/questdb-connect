@@ -226,6 +226,15 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return None
 
     @classmethod
+    def get_datatype(cls, type_code: Any) -> Optional[str]:
+        """
+        Change column type code from cursor description to string representation.
+        :param type_code: Type code from cursor description
+        :return: String representation of type code
+        """
+        return type_code
+
+    @classmethod
     def get_column_spec(
             cls,
             native_type: Optional[str],
