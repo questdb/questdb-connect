@@ -144,7 +144,6 @@ def geohash_type(bits: int):
 def resolve_type_from_name(type_name):
     if not type_name:
         return None
-    print(f'PAZUZU: {type_name}')
     name_u = type_name.upper()
     qdbc_type = None
     if name_u == 'BOOLEAN':
@@ -187,6 +186,8 @@ def resolve_type_from_name(type_name):
         if description[-1].upper() == 'C':
             bits *= 5
         qdbc_type = geohash_type(bits)
+    if not qdbc_type:
+        raise ArgumentError(f'COCONUT.native_type: {type_name}')
     return qdbc_type() if qdbc_type else None
 
 
