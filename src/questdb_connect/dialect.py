@@ -144,6 +144,7 @@ def geohash_type(bits: int):
 def resolve_type_from_name(type_name):
     if not type_name:
         return None
+    print(f'PAZUZU: {type_name}')
     name_u = type_name.upper()
     qdbc_type = None
     if name_u == 'BOOLEAN':

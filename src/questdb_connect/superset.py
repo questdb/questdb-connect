@@ -240,6 +240,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         """
         if not native_type:
             return None
+        print(f'ULANKA native_type: {native_type}, source: {source}, db_extra: {db_extra}')
         sqla_type = qdbcd.resolve_type_from_name(native_type)
         name_u = sqla_type.__visit_name__.upper()
         generic_type = None
