@@ -23,13 +23,13 @@
 import logging
 import re
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
+from superset.utils import core as utils
 from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
 from superset.utils.core import GenericDataType
 
-import questdb_connect as qdbc
-from questdb_connect.dialect import connection_uri
+import questdb_connect.dialect as qdbcd
 
 logger = logging.getLogger(__name__)
 
@@ -69,132 +69,132 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     _default_column_type_mappings = (
         (
             re.compile(r"^bool(ean)?", re.IGNORECASE),
-            qdbc.Boolean(),
+            qdbcd.Boolean(),
             GenericDataType.BOOLEAN,
         ),
         (
             re.compile(r"^byte", re.IGNORECASE),
-            qdbc.Byte(),
+            qdbcd.Byte(),
             GenericDataType.BOOLEAN,
         ),
         (
             re.compile(r"^short", re.IGNORECASE),
-            qdbc.Short(),
+            qdbcd.Short(),
             GenericDataType.BOOLEAN,
         ),
         (
             re.compile(r"^smallint", re.IGNORECASE),
-            qdbc.Short(),
+            qdbcd.Short(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^smallserial", re.IGNORECASE),
-            qdbc.Short(),
+            qdbcd.Short(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^int(eger)?", re.IGNORECASE),
-            qdbc.Integer(),
+            qdbcd.Integer(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^serial", re.IGNORECASE),
-            qdbc.Integer(),
+            qdbcd.Integer(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^bigint", re.IGNORECASE),
-            qdbc.Long(),
+            qdbcd.Long(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^long", re.IGNORECASE),
-            qdbc.Long(),
+            qdbcd.Long(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^bigserial", re.IGNORECASE),
-            qdbc.Long(),
+            qdbcd.Long(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^float", re.IGNORECASE),
-            qdbc.Float(),
+            qdbcd.Float(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^double", re.IGNORECASE),
-            qdbc.Double(),
+            qdbcd.Double(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^decimal", re.IGNORECASE),
-            qdbc.Double(),
+            qdbcd.Double(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^numeric", re.IGNORECASE),
-            qdbc.Double(),
+            qdbcd.Double(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^real", re.IGNORECASE),
-            qdbc.Double(),
+            qdbcd.Double(),
             GenericDataType.NUMERIC,
         ),
         (
             re.compile(r"^symbol", re.IGNORECASE),
-            qdbc.Symbol(),
+            qdbcd.Symbol(),
             GenericDataType.STRING,
         ),
         (
             re.compile(r"^string", re.IGNORECASE),
-            qdbc.String(),
+            qdbcd.String(),
             GenericDataType.STRING,
         ),
         (
             re.compile(r"^long256", re.IGNORECASE),
-            qdbc.Long256(),
+            qdbcd.Long256(),
             GenericDataType.STRING,
         ),
         (
             re.compile(r"^geohash\((\d+)([b|c])\)", re.IGNORECASE),
-            qdbc.geohash_type(60),
+            qdbcd.geohash_type(60)(),
             GenericDataType.STRING,
         ),
         (
             re.compile(r"^uuid", re.IGNORECASE),
-            qdbc.UUID(),
+            qdbcd.UUID(),
             GenericDataType.STRING,
         ),
         (
             re.compile(r"varchar", re.IGNORECASE),
-            qdbc.String(),
+            qdbcd.String(),
             GenericDataType.STRING,
         ),
         (
             re.compile(r"^(tiny|medium|long)?text", re.IGNORECASE),
-            qdbc.String(),
+            qdbcd.String(),
             GenericDataType.STRING,
         ),
         (
             re.compile(r"^char", re.IGNORECASE),
-            qdbc.Char(),
+            qdbcd.Char(),
             GenericDataType.STRING,
         ),
         (
             re.compile(r"^timestamp", re.IGNORECASE),
-            qdbc.Timestamp(),
+            qdbcd.Timestamp(),
             GenericDataType.TEMPORAL,
         ),
         (
             re.compile(r"^datetime", re.IGNORECASE),
-            qdbc.Timestamp(),
+            qdbcd.Timestamp(),
             GenericDataType.TEMPORAL,
         ),
         (
             re.compile(r"^date", re.IGNORECASE),
-            qdbc.Date(),
+            qdbcd.Date(),
             GenericDataType.TEMPORAL,
         ),
     )
@@ -205,7 +205,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             parameters: BasicParametersType,
             encrypted_extra: Optional[Dict[str, str]] = None
     ) -> str:
-        return connection_uri(
+        return qdbcd.connection_uri(
             parameters.get("host"),
             int(parameters.get("port")),
             parameters.get("username"),
@@ -224,3 +224,33 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             dttm_formatted = dttm.isoformat(sep=" ", timespec="microseconds")
             return f"TO_TIMESTAMP('{dttm_formatted}', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')"
         return None
+
+    @classmethod
+    def get_column_spec(
+            cls,
+            native_type: Optional[str],
+            db_extra: Optional[Dict[str, Any]] = None,
+            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
+    ) -> Optional[utils.ColumnSpec]:
+        """Get generic type related specs regarding a native column type.
+        :param native_type: Native database type
+        :param db_extra: The database extra object
+        :param source: Type coming from the database table or cursor description
+        :return: ColumnSpec object
+        """
+        if not native_type:
+            return None
+        sqla_type = qdbcd.resolve_type_from_name(native_type)
+        name_u = sqla_type.__visit_name__.upper()
+        generic_type = None
+        if name_u == 'BOOLEAN':
+            generic_type = GenericDataType.BOOLEAN
+        elif name_u in ('BYTE', 'SHORT', 'INT', 'INTEGER', 'LONG', 'FLOAT', 'DOUBLE'):
+            generic_type = GenericDataType.NUMERIC
+        elif name_u in ('SYMBOL', 'STRING', 'TEXT', 'VARCHAR', 'CHAR', 'LONG256', 'UUID'):
+            generic_type = GenericDataType.STRING
+        elif name_u in ('DATE', 'TIMESTAMP'):
+            generic_type = GenericDataType.TEMPORAL
+        elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
+            generic_type = GenericDataType.STRING
+        return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)

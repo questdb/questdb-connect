@@ -77,7 +77,7 @@ Directory **superset_toolkit** contains replacement files for the cloned reposit
 To build the image:
 
 ```shell
-docker build -t apache/superset:latest_dev .
+docker build -t apache/superset:latest-dev .
 ```
 
 To run Apache Superset in developer mode:

@@ -186,7 +186,7 @@ def resolve_type_from_name(type_name):
         if description[-1].upper() == 'C':
             bits *= 5
         qdbc_type = geohash_type(bits)
-    return qdbc_type
+    return qdbc_type() if qdbc_type else None
 
 
 # ===== QUESTDB ENGINE =====
