@@ -75,7 +75,7 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
                 self.compiled += f' PARTITION BY {self.partition_by.name}'
             if self.is_wal:
                 if not is_partitioned:
-                    raise types.ArgumentError(None, 'Designated timestamp and partition by must be specified for WAL table')
+                    raise types.ArgumentError(None, 'WAL table requires designated timestamp and partition by')
                 if self.is_wal:
                     self.compiled += ' WAL'
                 else:
@@ -104,7 +104,7 @@ def _quote_identifier(identifier: str):
     return f"'{identifier[first:last]}'"
 
 
-class QDBIdentifierPreparer(IdentifierPreparer):
+class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
     """QuestDB's identifiers are better off with quotes"""
     quote_identifier = staticmethod(_quote_identifier)
 
@@ -112,12 +112,12 @@ class QDBIdentifierPreparer(IdentifierPreparer):
         return True
 
 
-class QDBDDLCompiler(DDLCompiler):
+class QDBDDLCompiler(DDLCompiler, abc.ABC):
     def visit_create_schema(self, create, **kw):
-        raise Exception('QuestDB does not support SCHEMAS')
+        raise Exception('QuestDB does not support SCHEMAS, there is only "public"')
 
     def visit_drop_schema(self, drop, **kw):
-        raise Exception('QuestDB does not support SCHEMAS')
+        raise Exception('QuestDB does not support SCHEMAS, there is only "public"')
 
     def visit_create_table(self, create, **kw):
         table = create.element
@@ -131,12 +131,12 @@ class QDBDDLCompiler(DDLCompiler):
         return column.type.column_spec(column.name)
 
 
-class QDBSQLCompiler(SQLCompiler):
+class QDBSQLCompiler(SQLCompiler, abc.ABC):
     def _is_safe_for_fast_insert_values_helper(self):
         return True
 
 
-class QDBInspector(Inspector):
+class QDBInspector(Inspector, abc.ABC):
     def reflecttable(
             self,
             table,
@@ -195,7 +195,7 @@ class QDBInspector(Inspector):
 class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     name = 'questdb'
     psycopg2_version = (2, 9)
-    default_schema_name = None
+    default_schema_name = 'public'
     statement_compiler = QDBSQLCompiler
     ddl_compiler = QDBDDLCompiler
     type_compiler = GenericTypeCompiler
@@ -221,7 +221,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
         return dbapi
 
     def get_schema_names(self, connection, **kw):
-        return []
+        return ['public']
 
     def get_table_names(self, connection, schema=None, **kw):
         return [row.table for row in connection.execute(sqla.text('SHOW TABLES'))]
