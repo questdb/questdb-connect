@@ -105,6 +105,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def convert_dttm(cls, target_type: str, dttm: datetime, *_args, **_kwargs) -> Optional[str]:
+        logger.info('QUEST convert_dttm(target_type: %s - %s)', target_type, target_type.__class__.__name__)
         if target_type.upper() == 'DATE':
             return f"TO_DATE('{dttm.date().isoformat()}', 'YYYY-MM-DD')"
         if target_type.upper() == 'DATETIME':
@@ -119,6 +120,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param type_code: Type code from cursor description
         :return: String representation of type code
         """
+        logger.info('QUEST get_datatype(type_code: %s)', type_code)
         return type_code
 
     @classmethod
@@ -128,10 +130,11 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     ) -> Optional[Tuple[TypeEngine, GenericDataType]]:
         if not column_type:
             return None
+        logger.info('QUEST get_column_types(column_type: %s)', column_type)
         for regex, sqla_type, generic_type in cls._default_column_type_mappings:
             matching_name = regex.match(column_type)
             if matching_name:
-                return sqla_type, generic_type
+                return types.resolve_type_from_name(sqla_type.__visit_name__), generic_type
         return None
 
     @classmethod
@@ -143,6 +146,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     ) -> Optional[utils.ColumnSpec]:
         if not native_type:
             return None
+        logger.info('QUEST get_column_spec(native_type: %s)', native_type)
         sqla_type = types.resolve_type_from_name(native_type)
         name_u = sqla_type.__visit_name__
         generic_type = None
@@ -157,3 +161,8 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
             generic_type = GenericDataType.STRING
         return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)
+
+    @classmethod
+    def column_datatype_to_string(cls, sqla_column_type: TypeEngine, *_args):
+        logger.info('QUEST column_datatype_to_string(sqla_column_type: %s)', sqla_column_type)
+        return sqla_column_type.compile()
