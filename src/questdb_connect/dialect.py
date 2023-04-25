@@ -114,10 +114,10 @@ class QDBIdentifierPreparer(IdentifierPreparer):
 
 class QDBDDLCompiler(DDLCompiler):
     def visit_create_schema(self, create, **kw):
-        raise Exception('QuestDB does not support SCHEMAS, there is only "public"')
+        raise Exception('QuestDB does not support SCHEMAS')
 
     def visit_drop_schema(self, drop, **kw):
-        raise Exception('QuestDB does not support SCHEMAS, there is only "public"')
+        raise Exception('QuestDB does not support SCHEMAS')
 
     def visit_create_table(self, create, **kw):
         table = create.element
@@ -195,7 +195,7 @@ class QDBInspector(Inspector):
 class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     name = 'questdb'
     psycopg2_version = (2, 9)
-    default_schema_name = 'public'
+    default_schema_name = None
     statement_compiler = QDBSQLCompiler
     ddl_compiler = QDBDDLCompiler
     type_compiler = GenericTypeCompiler
@@ -221,7 +221,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
         return dbapi
 
     def get_schema_names(self, connection, **kw):
-        return ['public']
+        return []
 
     def get_table_names(self, connection, schema=None, **kw):
         return [row.table for row in connection.execute(sqla.text('SHOW TABLES'))]

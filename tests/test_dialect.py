@@ -31,8 +31,8 @@ from tests.conftest import TEST_TABLE_NAME, collect_select_all, collect_select_a
 
 def test_insert(test_engine, test_model):
     with test_engine.connect() as conn:
-        assert test_engine.dialect.has_table(conn, TEST_TABLE_NAME, 'public')
-        assert not test_engine.dialect.has_table(conn, 'scorchio', 'public')
+        assert test_engine.dialect.has_table(conn, TEST_TABLE_NAME)
+        assert not test_engine.dialect.has_table(conn, 'scorchio')
         now = datetime.datetime(2023, 4, 12, 23, 55, 59, 342380)
         now_date = now.date()
         expected = ("(True, 8, 12, 13, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
