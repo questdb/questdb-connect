@@ -22,8 +22,8 @@
 #
 import datetime
 
-import questdb_connect.dialect as qdbc
 import sqlalchemy as sqla
+from questdb_connect import types
 from sqlalchemy.orm import Session
 
 from tests.conftest import TEST_TABLE_NAME, collect_select_all, collect_select_all_raw_connection
@@ -113,21 +113,21 @@ def test_inspect(test_engine, test_model):
     table = sqla.Table(TEST_TABLE_NAME, metadata, autoload_with=test_engine)
     table_columns = str([(col.name, col.type, col.primary_key) for col in table.columns])
     assert table_columns == str([
-        ('col_boolean', qdbc.Boolean(), False),
-        ('col_byte', qdbc.Byte(), False),
-        ('col_short', qdbc.Short(), False),
-        ('col_int', qdbc.Int(), False),
-        ('col_long', qdbc.Long(), False),
-        ('col_float', qdbc.Float(), False),
-        ('col_double', qdbc.Double(), False),
-        ('col_symbol', qdbc.Symbol(), False),
-        ('col_string', qdbc.String(), False),
-        ('col_char', qdbc.Char(), False),
-        ('col_uuid', qdbc.UUID(), False),
-        ('col_date', qdbc.Date(), False),
-        ('col_ts', qdbc.Timestamp(), True),
-        ('col_geohash', qdbc.geohash_type(40)(), False),
-        ('col_long256', qdbc.Long256(), False)
+        ('col_boolean', types.Boolean(), False),
+        ('col_byte', types.Byte(), False),
+        ('col_short', types.Short(), False),
+        ('col_int', types.Int(), False),
+        ('col_long', types.Long(), False),
+        ('col_float', types.Float(), False),
+        ('col_double', types.Double(), False),
+        ('col_symbol', types.Symbol(), False),
+        ('col_string', types.String(), False),
+        ('col_char', types.Char(), False),
+        ('col_uuid', types.UUID(), False),
+        ('col_date', types.Date(), False),
+        ('col_ts', types.Timestamp(), True),
+        ('col_geohash', types.geohash_type(40)(), False),
+        ('col_long256', types.Long256(), False)
     ])
 
 

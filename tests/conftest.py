@@ -28,6 +28,7 @@ os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
 
 import pytest
 import questdb_connect.dialect as qdbc
+from questdb_connect import types
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.orm import declarative_base
 
@@ -80,22 +81,22 @@ def test_model_fixture(test_engine):
 
     class TableModel(Base):
         __tablename__ = TEST_TABLE_NAME
-        __table_args__ = (qdbc.QDBTableEngine(TEST_TABLE_NAME, 'col_ts', qdbc.PartitionBy.DAY, is_wal=True),)
-        col_boolean = Column('col_boolean', qdbc.Boolean)
-        col_byte = Column('col_byte', qdbc.Byte)
-        col_short = Column('col_short', qdbc.Short)
-        col_int = Column('col_int', qdbc.Int)
-        col_long = Column('col_long', qdbc.Long)
-        col_float = Column('col_float', qdbc.Float)
-        col_double = Column('col_double', qdbc.Double)
-        col_symbol = Column('col_symbol', qdbc.Symbol)
-        col_string = Column('col_string', qdbc.String)
-        col_char = Column('col_char', qdbc.Char)
-        col_uuid = Column('col_uuid', qdbc.UUID)
-        col_date = Column('col_date', qdbc.Date)
-        col_ts = Column('col_ts', qdbc.Timestamp, primary_key=True)
-        col_geohash = Column('col_geohash', qdbc.geohash_type(40))
-        col_long256 = Column('col_long256', qdbc.Long256)
+        __table_args__ = (qdbc.QDBTableEngine(TEST_TABLE_NAME, 'col_ts', types.PartitionBy.DAY, is_wal=True),)
+        col_boolean = Column('col_boolean', types.Boolean)
+        col_byte = Column('col_byte', types.Byte)
+        col_short = Column('col_short', types.Short)
+        col_int = Column('col_int', types.Int)
+        col_long = Column('col_long', types.Long)
+        col_float = Column('col_float', types.Float)
+        col_double = Column('col_double', types.Double)
+        col_symbol = Column('col_symbol', types.Symbol)
+        col_string = Column('col_string', types.String)
+        col_char = Column('col_char', types.Char)
+        col_uuid = Column('col_uuid', types.UUID)
+        col_date = Column('col_date', types.Date)
+        col_ts = Column('col_ts', types.Timestamp, primary_key=True)
+        col_geohash = Column('col_geohash', types.geohash_type(40))
+        col_long256 = Column('col_long256', types.Long256)
 
     TableModel.metadata.drop_all(test_engine)
     TableModel.metadata.create_all(test_engine)

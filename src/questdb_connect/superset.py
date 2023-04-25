@@ -23,13 +23,15 @@
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
+from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
 import questdb_connect.dialect as qdbcd
+from questdb_connect import types
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     engine = 'questdb'
     engine_name = 'QuestDB Connect'
     default_driver = "psycopg2"
-    encryption_parameters = {"sslmode": "require"}
+    encryption_parameters = {"sslmode": "prefer"}
     sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname[?key=value&key=value...]"
     time_groupby_inline = True
     time_secondary_columns = True
@@ -67,136 +69,21 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         'P3M': "date_trunc('quarter', {col})",
     }
     _default_column_type_mappings = (
-        (
-            re.compile(r"^bool(ean)?", re.IGNORECASE),
-            qdbcd.Boolean(),
-            GenericDataType.BOOLEAN,
-        ),
-        (
-            re.compile(r"^byte", re.IGNORECASE),
-            qdbcd.Byte(),
-            GenericDataType.BOOLEAN,
-        ),
-        (
-            re.compile(r"^short", re.IGNORECASE),
-            qdbcd.Short(),
-            GenericDataType.BOOLEAN,
-        ),
-        (
-            re.compile(r"^smallint", re.IGNORECASE),
-            qdbcd.Short(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^smallserial", re.IGNORECASE),
-            qdbcd.Short(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^int(eger)?", re.IGNORECASE),
-            qdbcd.Integer(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^serial", re.IGNORECASE),
-            qdbcd.Integer(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^bigint", re.IGNORECASE),
-            qdbcd.Long(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^long", re.IGNORECASE),
-            qdbcd.Long(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^bigserial", re.IGNORECASE),
-            qdbcd.Long(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^float", re.IGNORECASE),
-            qdbcd.Float(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^double", re.IGNORECASE),
-            qdbcd.Double(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^decimal", re.IGNORECASE),
-            qdbcd.Double(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^numeric", re.IGNORECASE),
-            qdbcd.Double(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^real", re.IGNORECASE),
-            qdbcd.Double(),
-            GenericDataType.NUMERIC,
-        ),
-        (
-            re.compile(r"^symbol", re.IGNORECASE),
-            qdbcd.Symbol(),
-            GenericDataType.STRING,
-        ),
-        (
-            re.compile(r"^string", re.IGNORECASE),
-            qdbcd.String(),
-            GenericDataType.STRING,
-        ),
-        (
-            re.compile(r"^long256", re.IGNORECASE),
-            qdbcd.Long256(),
-            GenericDataType.STRING,
-        ),
-        (
-            re.compile(r"^geohash\((\d+)([b|c])\)", re.IGNORECASE),
-            qdbcd.geohash_type(60)(),
-            GenericDataType.STRING,
-        ),
-        (
-            re.compile(r"^uuid", re.IGNORECASE),
-            qdbcd.UUID(),
-            GenericDataType.STRING,
-        ),
-        (
-            re.compile(r"varchar", re.IGNORECASE),
-            qdbcd.String(),
-            GenericDataType.STRING,
-        ),
-        (
-            re.compile(r"^(tiny|medium|long)?text", re.IGNORECASE),
-            qdbcd.String(),
-            GenericDataType.STRING,
-        ),
-        (
-            re.compile(r"^char", re.IGNORECASE),
-            qdbcd.Char(),
-            GenericDataType.STRING,
-        ),
-        (
-            re.compile(r"^timestamp", re.IGNORECASE),
-            qdbcd.Timestamp(),
-            GenericDataType.TEMPORAL,
-        ),
-        (
-            re.compile(r"^datetime", re.IGNORECASE),
-            qdbcd.Timestamp(),
-            GenericDataType.TEMPORAL,
-        ),
-        (
-            re.compile(r"^date", re.IGNORECASE),
-            qdbcd.Date(),
-            GenericDataType.TEMPORAL,
-        ),
+        (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
+        (re.compile("^BOOLEAN", re.IGNORECASE), types.Boolean, GenericDataType.BOOLEAN),
+        (re.compile("^BYTE", re.IGNORECASE), types.Byte, GenericDataType.BOOLEAN),
+        (re.compile("^SHORT", re.IGNORECASE), types.Short, GenericDataType.NUMERIC),
+        (re.compile("^INT", re.IGNORECASE), types.Int, GenericDataType.NUMERIC),
+        (re.compile("^LONG", re.IGNORECASE), types.Long, GenericDataType.NUMERIC),
+        (re.compile("^FLOAT", re.IGNORECASE), types.Float, GenericDataType.NUMERIC),
+        (re.compile("^DOUBLE'", re.IGNORECASE), types.Double, GenericDataType.NUMERIC),
+        (re.compile("^SYMBOL", re.IGNORECASE), types.Symbol, GenericDataType.STRING),
+        (re.compile("^STRING", re.IGNORECASE), types.String, GenericDataType.STRING),
+        (re.compile("^UUID", re.IGNORECASE), types.UUID, GenericDataType.STRING),
+        (re.compile("^CHAR", re.IGNORECASE), types.Char, GenericDataType.STRING),
+        (re.compile("^TIMESTAMP", re.IGNORECASE), types.Timestamp, GenericDataType.TEMPORAL),
+        (re.compile("^DATE", re.IGNORECASE), types.Date, GenericDataType.TEMPORAL),
+        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.geohash_type(60), GenericDataType.STRING),
     )
 
     @classmethod
@@ -235,28 +122,35 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return type_code
 
     @classmethod
+    def get_column_types(
+            cls,
+            column_type: Optional[str],
+    ) -> Optional[Tuple[TypeEngine, GenericDataType]]:
+        if not column_type:
+            return None
+        for regex, sqla_type, generic_type in cls._default_column_type_mappings:
+            matching_name = regex.match(column_type)
+            if matching_name:
+                return sqla_type, generic_type
+        return None
+
+    @classmethod
     def get_column_spec(
             cls,
             native_type: Optional[str],
             db_extra: Optional[Dict[str, Any]] = None,
             source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
     ) -> Optional[utils.ColumnSpec]:
-        """Get generic type related specs regarding a native column type.
-        :param native_type: Native database type
-        :param db_extra: The database extra object
-        :param source: Type coming from the database table or cursor description
-        :return: ColumnSpec object
-        """
         if not native_type:
             return None
-        sqla_type = qdbcd.resolve_type_from_name(native_type)
-        name_u = sqla_type.__visit_name__.upper()
+        sqla_type = types.resolve_type_from_name(native_type)
+        name_u = sqla_type.__visit_name__
         generic_type = None
         if name_u == 'BOOLEAN':
             generic_type = GenericDataType.BOOLEAN
-        elif name_u in ('BYTE', 'SHORT', 'INT', 'INTEGER', 'LONG', 'FLOAT', 'DOUBLE'):
+        elif name_u in ('BYTE', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE'):
             generic_type = GenericDataType.NUMERIC
-        elif name_u in ('SYMBOL', 'STRING', 'TEXT', 'VARCHAR', 'CHAR', 'LONG256', 'UUID'):
+        elif name_u in ('SYMBOL', 'STRING', 'CHAR', 'LONG256', 'UUID'):
             generic_type = GenericDataType.STRING
         elif name_u in ('DATE', 'TIMESTAMP'):
             generic_type = GenericDataType.TEMPORAL

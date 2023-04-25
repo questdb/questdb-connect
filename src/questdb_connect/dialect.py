@@ -21,16 +21,16 @@
 #  limitations under the License.
 #
 import abc
-import enum
 
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy.exc import ArgumentError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
 from sqlalchemy.sql.visitors import Traversible
+
+from questdb_connect import types
 
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
 
@@ -45,152 +45,6 @@ def create_engine(host: str, port: int, username: str, password: str, database: 
     return sqla.create_engine(connection_uri(host, port, username, password, database))
 
 
-# ===== QUESTDB PARTITION TYPE =====
-
-class PartitionBy(enum.Enum):
-    DAY = 0
-    MONTH = 1
-    YEAR = 2
-    NONE = 3
-    HOUR = 4
-    WEEK = 5
-
-
-# ===== QUESTDB DATA TYPES =====
-
-class QDBTypeMixin:
-    """Base class for all questdb_connect types"""
-    __visit_name__ = 'QuestDBType'
-
-    def column_spec(self, column_name: str):
-        return f"'{column_name}' {self.__visit_name__}"
-
-
-class Boolean(sqla.Boolean, QDBTypeMixin):
-    __visit_name__ = 'BOOLEAN'
-
-
-class Byte(sqla.Integer, QDBTypeMixin):
-    __visit_name__ = 'BYTE'
-
-
-class Short(sqla.Integer, QDBTypeMixin):
-    __visit_name__ = 'SHORT'
-
-
-class Int(sqla.Integer, QDBTypeMixin):
-    __visit_name__ = 'INT'
-
-
-class Integer(Int):
-    pass
-
-
-class Long(sqla.Integer, QDBTypeMixin):
-    __visit_name__ = 'LONG'
-
-
-class Float(sqla.Float, QDBTypeMixin):
-    __visit_name__ = 'FLOAT'
-
-
-class Double(sqla.Float, QDBTypeMixin):
-    __visit_name__ = 'DOUBLE'
-
-
-class Symbol(sqla.String, QDBTypeMixin):
-    __visit_name__ = 'SYMBOL'
-
-
-class String(sqla.String, QDBTypeMixin):
-    __visit_name__ = 'STRING'
-
-
-class Char(sqla.String, QDBTypeMixin):
-    __visit_name__ = 'CHAR'
-
-
-class Long256(sqla.String, QDBTypeMixin):
-    __visit_name__ = 'LONG256'
-
-
-class UUID(sqla.String, QDBTypeMixin):
-    __visit_name__ = 'UUID'
-
-
-class Date(sqla.Date, QDBTypeMixin):
-    __visit_name__ = 'DATE'
-
-
-class Timestamp(sqla.DateTime, QDBTypeMixin):
-    __visit_name__ = 'TIMESTAMP'
-
-
-_GEOHASH_MAX_BITS = 60
-
-
-def geohash_type(bits: int):
-    """Factory for Geohash(<bits>b) types"""
-    if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_MAX_BITS:
-        raise AttributeError(f'bits should be of type int [0, {_GEOHASH_MAX_BITS}]')
-
-    class GeohashWithPrecision(sqla.String, QDBTypeMixin):
-        __visit_name__ = f'GEOHASH({bits}b)'
-        bit_precision = bits
-
-    return GeohashWithPrecision
-
-
-def resolve_type_from_name(type_name):
-    if not type_name:
-        return None
-    name_u = type_name.upper()
-    qdbc_type = None
-    if name_u == 'BOOLEAN':
-        qdbc_type = Boolean
-    elif name_u == 'BYTE':
-        qdbc_type = Byte
-    elif name_u == 'SHORT':
-        qdbc_type = Short
-    elif name_u == 'INT' or name_u == 'INTEGER':
-        qdbc_type = Int
-    elif name_u == 'LONG':
-        qdbc_type = Long
-    elif name_u == 'FLOAT':
-        qdbc_type = Float
-    elif name_u == 'DOUBLE':
-        qdbc_type = Double
-    elif name_u == 'SYMBOL':
-        qdbc_type = Symbol
-    elif name_u == 'STRING':
-        qdbc_type = String
-    elif name_u == 'TEXT':
-        qdbc_type = String
-    elif name_u == 'VARCHAR':
-        qdbc_type = String
-    elif name_u == 'CHAR':
-        qdbc_type = Char
-    elif name_u == 'LONG256':
-        qdbc_type = Long256
-    elif name_u == 'UUID':
-        qdbc_type = UUID
-    elif name_u == 'DATE':
-        qdbc_type = Date
-    elif name_u == 'TIMESTAMP':
-        qdbc_type = Timestamp
-    elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
-        open_p = name_u.index('(')
-        close_p = name_u.index(')')
-        description = name_u[open_p + 1:close_p]
-        bits = int(description[:-1])
-        if description[-1].upper() == 'C':
-            bits *= 5
-        qdbc_type = geohash_type(bits)
-    if not qdbc_type:
-        raise ArgumentError(f'COCONUT.native_type: {type_name}')
-    return qdbc_type() if qdbc_type else None
-
-
 # ===== QUESTDB ENGINE =====
 
 class QDBTableEngine(SchemaEventTarget, Traversible):
@@ -198,7 +52,7 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
             self,
             table_name: str,
             ts_col_name: str = None,
-            partition_by: PartitionBy = PartitionBy.DAY,
+            partition_by: types.PartitionBy = types.PartitionBy.DAY,
             is_wal: bool = True
     ):
         Traversible.__init__(self)
@@ -212,16 +66,16 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
         if self.compiled is None:
             self.compiled = ''
             has_ts = self.ts_col_name is not None
-            is_partitioned = self.partition_by and self.partition_by != PartitionBy.NONE
+            is_partitioned = self.partition_by and self.partition_by != types.PartitionBy.NONE
             if has_ts:
                 self.compiled += f'TIMESTAMP({self.ts_col_name})'
             if is_partitioned:
                 if not has_ts:
-                    raise ArgumentError(None, 'Designated timestamp must be specified for partitioned table')
+                    raise types.ArgumentError(None, 'Designated timestamp must be specified for partitioned table')
                 self.compiled += f' PARTITION BY {self.partition_by.name}'
             if self.is_wal:
                 if not is_partitioned:
-                    raise ArgumentError(None, 'Designated timestamp and partition by must be specified for WAL table')
+                    raise types.ArgumentError(None, 'Designated timestamp and partition by must be specified for WAL table')
                 if self.is_wal:
                     self.compiled += ' WAL'
                 else:
@@ -272,8 +126,8 @@ class QDBDDLCompiler(DDLCompiler):
         return create_table + ') ' + table.engine.get_table_suffix()
 
     def get_column_specification(self, column: sqla.Column, **_):
-        if not isinstance(column.type, QDBTypeMixin):
-            raise ArgumentError('Column type is not a valid QuestDB type')
+        if not isinstance(column.type, types.QDBTypeMixin):
+            raise types.ArgumentError('Column type is not a valid QuestDB type')
         return column.type.column_spec(column.name)
 
 
@@ -308,15 +162,15 @@ class QDBInspector(Inspector):
             raise NoResultFound(f"Table '{table_name}' does not exist")
         table_attrs = result_set.first()
         col_ts_name = table_attrs['designatedTimestamp']
-        partition_by = PartitionBy[table_attrs['partitionBy']]
-        is_wal = table_attrs['walEnabled'] == True
+        partition_by = types.PartitionBy[table_attrs['partitionBy']]
+        is_wal = True if table_attrs['walEnabled'] else False
         for row in self.bind.execute(f"table_columns('{table_name}')"):
             col_name = row[0]
             if include_columns and col_name not in include_columns:
                 continue
             if exclude_columns and col_name in exclude_columns:
                 continue
-            col_type = resolve_type_from_name(row[1])
+            col_type = types.resolve_type_from_name(row[1])
             if col_ts_name and col_ts_name.upper() == col_name.upper():
                 table.append_column(sqla.Column(col_name, col_type, primary_key=True))
             else:
@@ -330,7 +184,7 @@ class QDBInspector(Inspector):
             raise NoResultFound(f"Table '{table_name}' does not exist")
         return [{
             'name': row[0],
-            'type': resolve_type_from_name(row[1]),
+            'type': types.resolve_type_from_name(row[1]),
             'nullable': True,
             'autoincrement': False,
             'persisted': True
@@ -359,7 +213,6 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     non_native_boolean_check_constraint = False
     max_identifier_length = 255
     _user_defined_max_identifier_length = 255
-    supports_multivalues_insert = True
     supports_is_distinct_from = False
 
     @classmethod
