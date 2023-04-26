@@ -33,6 +33,7 @@ from sqlalchemy.sql.visitors import Traversible
 
 from questdb_connect.types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
+
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
 
 # ===== SQLAlchemy Dialect ======
@@ -92,6 +93,17 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
 class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
     """QuestDB's identifiers are better off with quotes"""
     quote_identifier = staticmethod(quote_identifier)
+
+    def __init__(
+            self,
+            dialect,
+            initial_quote='"',
+            final_quote=None,
+            escape_quote='"',
+            quote_case_sensitive_collations=True,
+            omit_schema=False,
+    ):
+        super().__init__(dialect, "'", None, "'", True, True)
 
     def _requires_quotes(self, _value):
         return True
