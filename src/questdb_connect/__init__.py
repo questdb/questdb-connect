@@ -23,6 +23,7 @@
 import psycopg2
 
 # ===== DBAPI =====
+
 # https://peps.python.org/pep-0249/
 
 apilevel = '2.0'
@@ -40,4 +41,10 @@ def connect(**kwargs):
     user = kwargs.get('username') or 'admin'
     passwd = kwargs.get('password') or 'quest'
     database = kwargs.get('database') or 'main'
-    return psycopg2.connect(host=host, port=port, user=user, password=passwd, database=database)
+    return psycopg2.connect(
+        host=host,
+        port=port,
+        user=user,
+        password=passwd,
+        database=database
+    )

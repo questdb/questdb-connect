@@ -20,7 +20,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-import logging
 import re
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
@@ -32,9 +31,6 @@ from superset.utils.core import GenericDataType
 
 import questdb_connect.dialect as qdbcd
 from questdb_connect import types
-
-logger = logging.getLogger(__name__)
-
 
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
@@ -130,8 +126,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param type_code: Type code from cursor description
         :return: String representation of type code
         """
-        logger.info('QUEST get_datatype(type_code: %s)', type_code)
-        return type_code
+        return type_code.upper() if isinstance(type_code, str) and type_code else None
 
     @classmethod
     def get_column_types(
@@ -140,12 +135,28 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     ) -> Optional[Tuple[TypeEngine, GenericDataType]]:
         if not column_type:
             return None
-        logger.info('QUEST get_column_types(column_type: %s)', column_type)
         for regex, sqla_type, generic_type in cls._default_column_type_mappings:
-            matching_name = regex.match(column_type)
+            matching_name = regex.search(column_type)
             if matching_name:
                 return types.resolve_type_from_name(sqla_type.__visit_name__), generic_type
         return None
+
+    @classmethod
+    def get_sqla_column_type(
+            cls,
+            native_type: Optional[str],
+            db_extra: Optional[Dict[str, Any]] = None,
+            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
+    ) -> Optional[TypeEngine]:
+        """Converts native database type to sqlalchemy column type.
+        :param native_type: Native database type
+        :param db_extra: The database extra object
+        :param source: Type coming from the database table or cursor description
+        :return: ColumnSpec object
+        """
+        if not native_type:
+            return None
+        return types.resolve_type_from_name(native_type)
 
     @classmethod
     def get_column_spec(
@@ -156,7 +167,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     ) -> Optional[utils.ColumnSpec]:
         if not native_type:
             return None
-        logger.info('QUEST get_column_spec(native_type: %s)', native_type)
         sqla_type = types.resolve_type_from_name(native_type)
         name_u = sqla_type.__visit_name__
         generic_type = None
@@ -174,5 +184,4 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def column_datatype_to_string(cls, sqla_column_type: TypeEngine, *_args):
-        logger.info('QUEST column_datatype_to_string(sqla_column_type: %s)', sqla_column_type)
-        return sqla_column_type.compile()
+        return sqla_column_type.__visit_name__

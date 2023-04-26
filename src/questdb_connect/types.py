@@ -41,10 +41,38 @@ class PartitionBy(enum.Enum):
 # ===== QUESTDB DATA TYPES =====
 
 _QUOTES = ("'", '"')
+_GEOHASH_BYTE_MAX = 8
+_GEOHASH_SHORT_MAX = 16
+_GEOHASH_INT_MAX = 32
+_GEOHASH_LONG_BITS = 60
 _TYPE_CACHE = {
     # key:   '__visit_name__' of the implementor of QDBTypeMixin
     # value: implementor class itself
 }
+
+
+def geohash_type_name(bits):
+    if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_LONG_BITS:
+        raise ArgumentError(f'geohash precision must be int [0, {_GEOHASH_LONG_BITS}]')
+    if 0 < bits <= _GEOHASH_BYTE_MAX:
+        return f'GEOHASH(8b)'
+    elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
+        return 'GEOHASH(3c)'
+    elif _GEOHASH_SHORT_MAX < bits <= _GEOHASH_INT_MAX:
+        return 'GEOHASH(6c)'
+    return f'GEOHASH(12c)'
+
+
+def geohash_class(bits):
+    if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_LONG_BITS:
+        raise ArgumentError(f'geohash precision must be int [0, {_GEOHASH_LONG_BITS}]')
+    if 0 < bits <= _GEOHASH_BYTE_MAX:
+        return GeohashByte
+    elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
+        return GeohashShort
+    elif _GEOHASH_SHORT_MAX < bits <= _GEOHASH_INT_MAX:
+        return GeohashInt
+    return GeohashLong
 
 
 def quote_identifier(identifier: str):
@@ -80,8 +108,8 @@ class Boolean(QDBTypeMixin):
 
 class Byte(QDBTypeMixin):
     __visit_name__ = 'BYTE'
-    type_code = 2
     impl = sqla.types.Integer
+    type_code = 2
 
 
 class Short(QDBTypeMixin):
@@ -144,36 +172,6 @@ class Symbol(QDBTypeMixin):
 class Long256(QDBTypeMixin):
     __visit_name__ = 'LONG256'
     type_code = 13
-
-
-_GEOHASH_BYTE_MAX = 8
-_GEOHASH_SHORT_MAX = 16
-_GEOHASH_INT_MAX = 32
-_GEOHASH_LONG_BITS = 60
-
-
-def geohash_type_name(bits):
-    if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_LONG_BITS:
-        raise ArgumentError(f'geohash precision must be int [0, {_GEOHASH_LONG_BITS}]')
-    if 0 < bits <= _GEOHASH_BYTE_MAX:
-        return f'GEOHASH(8b)'
-    elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
-        return 'GEOHASH(3c)'
-    elif _GEOHASH_SHORT_MAX < bits <= _GEOHASH_INT_MAX:
-        return 'GEOHASH(6c)'
-    return f'GEOHASH(12c)'
-
-
-def geohash_class(bits):
-    if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_LONG_BITS:
-        raise ArgumentError(f'geohash precision must be int [0, {_GEOHASH_LONG_BITS}]')
-    if 0 < bits <= _GEOHASH_BYTE_MAX:
-        return GeohashByte
-    elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
-        return GeohashShort
-    elif _GEOHASH_SHORT_MAX < bits <= _GEOHASH_INT_MAX:
-        return GeohashInt
-    return GeohashLong
 
 
 class GeohashByte(QDBTypeMixin):
