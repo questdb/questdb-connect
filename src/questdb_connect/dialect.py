@@ -25,15 +25,15 @@ import abc
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
 from sqlalchemy.sql.visitors import Traversible
 
-from questdb_connect import types
+from questdb_connect.types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
-
 
 # ===== SQLAlchemy Dialect ======
 
@@ -52,7 +52,7 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
             self,
             table_name: str,
             ts_col_name: str = None,
-            partition_by: types.PartitionBy = types.PartitionBy.DAY,
+            partition_by: PartitionBy = PartitionBy.DAY,
             is_wal: bool = True
     ):
         Traversible.__init__(self)
@@ -66,16 +66,16 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
         if self.compiled is None:
             self.compiled = ''
             has_ts = self.ts_col_name is not None
-            is_partitioned = self.partition_by and self.partition_by != types.PartitionBy.NONE
+            is_partitioned = self.partition_by and self.partition_by != PartitionBy.NONE
             if has_ts:
                 self.compiled += f'TIMESTAMP({self.ts_col_name})'
             if is_partitioned:
                 if not has_ts:
-                    raise types.ArgumentError(None, 'Designated timestamp must be specified for partitioned table')
+                    raise ArgumentError(None, 'Designated timestamp must be specified for partitioned table')
                 self.compiled += f' PARTITION BY {self.partition_by.name}'
             if self.is_wal:
                 if not is_partitioned:
-                    raise types.ArgumentError(None, 'WAL table requires designated timestamp and partition by')
+                    raise ArgumentError(None, 'WAL table requires designated timestamp and partition by')
                 if self.is_wal:
                     self.compiled += ' WAL'
                 else:
@@ -89,24 +89,9 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
 # ===== QUESTDB DIALECT TYPES =====
 
 
-_QUOTES = ("'", '"')
-
-
-def _quote_identifier(identifier: str):
-    if not identifier:
-        return None
-    first = 0
-    last = len(identifier)
-    if identifier[first] in _QUOTES:
-        first += 1
-    if identifier[last - 1] in _QUOTES:
-        last -= 1
-    return f"'{identifier[first:last]}'"
-
-
 class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
     """QuestDB's identifiers are better off with quotes"""
-    quote_identifier = staticmethod(_quote_identifier)
+    quote_identifier = staticmethod(quote_identifier)
 
     def _requires_quotes(self, _value):
         return True
@@ -121,13 +106,13 @@ class QDBDDLCompiler(DDLCompiler, abc.ABC):
 
     def visit_create_table(self, create, **kw):
         table = create.element
-        create_table = f"CREATE TABLE '{table.fullname}' ("
+        create_table = f"CREATE TABLE {quote_identifier(table.fullname)} ("
         create_table += ', '.join([self.get_column_specification(c.element) for c in create.columns])
         return create_table + ') ' + table.engine.get_table_suffix()
 
     def get_column_specification(self, column: sqla.Column, **_):
-        if not isinstance(column.type, types.QDBTypeMixin):
-            raise types.ArgumentError('Column type is not a valid QuestDB type')
+        if not isinstance(column.type, QDBTypeMixin):
+            raise ArgumentError('Column type is not a valid QuestDB type')
         return column.type.column_spec(column.name)
 
 
@@ -162,7 +147,7 @@ class QDBInspector(Inspector, abc.ABC):
             raise NoResultFound(f"Table '{table_name}' does not exist")
         table_attrs = result_set.first()
         col_ts_name = table_attrs['designatedTimestamp']
-        partition_by = types.PartitionBy[table_attrs['partitionBy']]
+        partition_by = PartitionBy[table_attrs['partitionBy']]
         is_wal = True if table_attrs['walEnabled'] else False
         for row in self.bind.execute(f"table_columns('{table_name}')"):
             col_name = row[0]
@@ -170,7 +155,7 @@ class QDBInspector(Inspector, abc.ABC):
                 continue
             if exclude_columns and col_name in exclude_columns:
                 continue
-            col_type = types.resolve_type_from_name(row[1])
+            col_type = resolve_type_from_name(row[1])
             if col_ts_name and col_ts_name.upper() == col_name.upper():
                 table.append_column(sqla.Column(col_name, col_type, primary_key=True))
             else:
@@ -184,7 +169,7 @@ class QDBInspector(Inspector, abc.ABC):
             raise NoResultFound(f"Table '{table_name}' does not exist")
         return [{
             'name': row[0],
-            'type': types.resolve_type_from_name(row[1]),
+            'type': resolve_type_from_name(row[1]),
             'nullable': True,
             'autoincrement': False,
             'persisted': True

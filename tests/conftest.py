@@ -95,7 +95,7 @@ def test_model_fixture(test_engine):
         col_uuid = Column('col_uuid', types.UUID)
         col_date = Column('col_date', types.Date)
         col_ts = Column('col_ts', types.Timestamp, primary_key=True)
-        col_geohash = Column('col_geohash', types.geohash_type(40))
+        col_geohash = Column('col_geohash', types.GeohashInt)
         col_long256 = Column('col_long256', types.Long256)
 
     TableModel.metadata.drop_all(test_engine)
@@ -110,7 +110,32 @@ def collect_select_all(session, expected_rows) -> str:
             return '\n'.join(str(row) for row in rs)
 
 
+def convert_to_string(value):
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    return str(value)
+
+
 def collect_select_all_raw_connection(test_engine, expected_rows) -> str:
+    # expected_cursor_description = (
+    #     Column(name='col_boolean', type_code=16),
+    #     Column(name='col_byte', type_code=21),
+    #     Column(name='col_short', type_code=21),
+    #     Column(name='col_int', type_code=23),
+    #     Column(name='col_long', type_code=20),
+    #     Column(name='col_float', type_code=700),
+    #     Column(name='col_double', type_code=701),
+    #     Column(name='col_symbol', type_code=1043),
+    #     Column(name='col_string', type_code=1043),
+    #     Column(name='col_char', type_code=18),
+    #     Column(name='col_uuid', type_code=2950),
+    #     Column(name='col_date', type_code=1114),
+    #     Column(name='col_ts', type_code=1114),
+    #     Column(name='col_geohash', type_code=1043),
+    #     Column(name='col_long256', type_code=1043)
+    # )
     conn = test_engine.raw_connection()
     try:
         while True:

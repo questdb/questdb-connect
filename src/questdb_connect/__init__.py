@@ -23,6 +23,7 @@
 import psycopg2
 
 # ===== DBAPI =====
+# https://peps.python.org/pep-0249/
 
 apilevel = '2.0'
 threadsafety = 2

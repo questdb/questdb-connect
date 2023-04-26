@@ -83,7 +83,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         (re.compile("^CHAR", re.IGNORECASE), types.Char, GenericDataType.STRING),
         (re.compile("^TIMESTAMP", re.IGNORECASE), types.Timestamp, GenericDataType.TEMPORAL),
         (re.compile("^DATE", re.IGNORECASE), types.Date, GenericDataType.TEMPORAL),
-        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.geohash_type(60), GenericDataType.STRING),
+        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.GeohashLong, GenericDataType.STRING),
     )
 
     @classmethod
@@ -101,22 +101,32 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
-        return '{col} * 1000'
+        """SQL expression that converts epoch (seconds) to datetime that can be used in a
+        query. The reference column should be denoted as `{col}` in the return
+        expression, e.g. "FROM_UNIXTIME({col})"
+        :return: SQL Expression
+        """
+        return '{col} * 1000000'
 
     @classmethod
     def convert_dttm(cls, target_type: str, dttm: datetime, *_args, **_kwargs) -> Optional[str]:
-        logger.info('QUEST convert_dttm(target_type: %s - %s)', target_type, target_type.__class__.__name__)
-        if target_type.upper() == 'DATE':
+        """Convert a Python `datetime` object to a SQL expression.
+        :param target_type: The target type of expression
+        :param dttm: The datetime object
+        :param db_extra: The database extra object
+        :return: The SQL expression
+        """
+        type_u = target_type.upper()
+        if type_u == 'DATE':
             return f"TO_DATE('{dttm.date().isoformat()}', 'YYYY-MM-DD')"
-        if target_type.upper() == 'DATETIME':
+        if type_u in ('DATETIME', 'TIMESTAMP'):
             dttm_formatted = dttm.isoformat(sep=" ", timespec="microseconds")
             return f"TO_TIMESTAMP('{dttm_formatted}', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')"
         return None
 
     @classmethod
     def get_datatype(cls, type_code: Any) -> Optional[str]:
-        """
-        Change column type code from cursor description to string representation.
+        """Change column type code from cursor description to string representation.
         :param type_code: Type code from cursor description
         :return: String representation of type code
         """

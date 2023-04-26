@@ -28,8 +28,8 @@ import time
 os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
 
 import questdb_connect.dialect as qdbcd
-import questdb_connect.types as types
 import sqlalchemy as sqla
+from questdb_connect import types
 from sqlalchemy import Column
 from sqlalchemy.orm import declarative_base
 
@@ -64,7 +64,7 @@ def main():
             col_uuid = Column(types.UUID)
             col_date = Column(types.Date)
             col_ts = Column(types.Timestamp, primary_key=True)
-            col_geohash = Column(types.geohash_type(40))
+            col_geohash = Column(types.GeohashInt)
             col_long256 = Column(types.Long256)
 
         # delete any previous existing 'all_types' table

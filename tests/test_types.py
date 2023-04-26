@@ -26,7 +26,7 @@ from questdb_connect import types
 
 
 def test_resolve_type_from_name():
-    for type_class in types.basic_type_classes:
+    for type_class in types.QUESTDB_TYPES:
         resolved_class = types.resolve_type_from_name(type_class.__visit_name__)
         assert type_class.__visit_name__ == resolved_class.__visit_name__
         assert isinstance(type_class(), resolved_class)
@@ -35,7 +35,7 @@ def test_resolve_type_from_name():
     for n in range(1, 61):
         g_name = types.geohash_type_name(n)
         g_class = types.resolve_type_from_name(g_name)
-        assert isinstance(g_class(), types.geohash_type(n))
+        assert isinstance(g_class(), types.geohash_class(n))
 
 
 def test_superset_default_mappings():
@@ -55,7 +55,7 @@ def test_superset_default_mappings():
         (re.compile("^TIMESTAMP", re.IGNORECASE), types.Timestamp),
         (re.compile("^DATE", re.IGNORECASE), types.Date)
     )
-    for type_class in types.basic_type_classes:
+    for type_class in types.QUESTDB_TYPES:
         for pattern, _expected_type in default_column_type_mappings:
             matching_name = pattern.match(type_class.__visit_name__)
             if matching_name:
@@ -70,4 +70,4 @@ def test_superset_default_mappings():
         matching_name = geohash_pattern.match(g_name).group(0)
         assert matching_name == g_name
         g_class = types.resolve_type_from_name(g_name)
-        assert isinstance(g_class(), types.geohash_type(n))
+        assert isinstance(g_class(), types.geohash_class(n))

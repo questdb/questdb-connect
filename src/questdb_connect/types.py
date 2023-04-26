@@ -24,14 +24,10 @@ from __future__ import annotations
 
 import enum
 
-import sqlalchemy
+import sqlalchemy as sqla
 from sqlalchemy.exc import ArgumentError
 
-_GEOHASH_MAX_BITS = 61
-
-
 # ===== QUESTDB PARTITION TYPE =====
-
 
 class PartitionBy(enum.Enum):
     DAY = 0
@@ -44,359 +40,206 @@ class PartitionBy(enum.Enum):
 
 # ===== QUESTDB DATA TYPES =====
 
+_QUOTES = ("'", '"')
+_TYPE_CACHE = {
+    # key:   '__visit_name__' of the implementor of QDBTypeMixin
+    # value: implementor class itself
+}
 
-class QDBTypeMixin:
+
+def quote_identifier(identifier: str):
+    if not identifier:
+        return None
+    first = 0
+    last = len(identifier)
+    if identifier[first] in _QUOTES:
+        first += 1
+    if identifier[last - 1] in _QUOTES:
+        last -= 1
+    return f"'{identifier[first:last]}'"
+
+
+class QDBTypeMixin(sqla.types.TypeDecorator):
     __visit_name__ = 'QDBTypeMixin'
+    impl = sqla.types.String
+    cache_ok = True
 
     @classmethod
     def matches_type_name(cls, type_name):
         return cls if type_name == cls.__visit_name__ else None
 
     def column_spec(self, column_name):
-        return f"'{column_name}' {self.__visit_name__}"
+        return f"{quote_identifier(column_name)} {self.__visit_name__}"
 
 
-class Boolean(QDBTypeMixin, sqlalchemy.Boolean):
+class Boolean(QDBTypeMixin):
     __visit_name__ = 'BOOLEAN'
+    impl = sqla.types.Boolean
+    type_code = 1
 
 
-class Byte(QDBTypeMixin, sqlalchemy.Integer):
+class Byte(QDBTypeMixin):
     __visit_name__ = 'BYTE'
+    type_code = 2
+    impl = sqla.types.Integer
 
 
-class Short(QDBTypeMixin, sqlalchemy.Integer):
+class Short(QDBTypeMixin):
     __visit_name__ = 'SHORT'
+    type_code = 3
+    impl = sqla.types.Integer
 
 
-class Int(QDBTypeMixin, sqlalchemy.Integer):
-    __visit_name__ = 'INT'
-
-
-class Long(QDBTypeMixin, sqlalchemy.Integer):
-    __visit_name__ = 'LONG'
-
-
-class Float(QDBTypeMixin, sqlalchemy.Float):
-    __visit_name__ = 'FLOAT'
-
-
-class Double(QDBTypeMixin, sqlalchemy.Float):
-    __visit_name__ = 'DOUBLE'
-
-
-class Symbol(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = 'SYMBOL'
-
-
-class String(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = 'STRING'
-
-
-class Char(QDBTypeMixin, sqlalchemy.String):
+class Char(QDBTypeMixin):
     __visit_name__ = 'CHAR'
+    type_code = 4
 
 
-class Long256(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = 'LONG256'
+class Int(QDBTypeMixin):
+    __visit_name__ = 'INT'
+    type_code = 5
+    impl = sqla.types.Integer
 
 
-class UUID(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = 'UUID'
+class Long(QDBTypeMixin):
+    __visit_name__ = 'LONG'
+    type_code = 6
+    impl = sqla.types.Integer
 
 
-class Date(QDBTypeMixin, sqlalchemy.Date):
+class Date(QDBTypeMixin):
     __visit_name__ = 'DATE'
+    type_code = 7
+    impl = sqla.types.Date
 
 
-class Timestamp(QDBTypeMixin, sqlalchemy.DateTime):
+class Timestamp(QDBTypeMixin):
     __visit_name__ = 'TIMESTAMP'
+    type_code = 8
+    impl = sqla.types.DateTime
 
 
-def geohash_type(bits):
-    """Factory for Geohash types"""
-    type_name = geohash_type_name(bits)
-    geohash_class = _TYPE_CACHE.get(type_name)
-    if not geohash_class:
-        geohash_class = eval(f'Geohash{bits}')
-        _TYPE_CACHE[type_name] = geohash_class
-    return geohash_class
+class Float(QDBTypeMixin):
+    __visit_name__ = 'FLOAT'
+    type_code = 9
+    impl = sqla.types.Float
+
+
+class Double(QDBTypeMixin):
+    __visit_name__ = 'DOUBLE'
+    type_code = 10
+    impl = sqla.types.Float
+
+
+class String(QDBTypeMixin):
+    __visit_name__ = 'STRING'
+    type_code = 11
+
+
+class Symbol(QDBTypeMixin):
+    __visit_name__ = 'SYMBOL'
+    type_code = 12
+
+
+class Long256(QDBTypeMixin):
+    __visit_name__ = 'LONG256'
+    type_code = 13
+
+
+_GEOHASH_BYTE_MAX = 8
+_GEOHASH_SHORT_MAX = 16
+_GEOHASH_INT_MAX = 32
+_GEOHASH_LONG_BITS = 60
 
 
 def geohash_type_name(bits):
-    if not isinstance(bits, int) or bits < 0 or bits >= _GEOHASH_MAX_BITS:
-        raise ArgumentError(f'geohash precision should be int [0, {_GEOHASH_MAX_BITS - 1}]')
-    return f'GEOHASH({bits}b)'
+    if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_LONG_BITS:
+        raise ArgumentError(f'geohash precision must be int [0, {_GEOHASH_LONG_BITS}]')
+    if 0 < bits <= _GEOHASH_BYTE_MAX:
+        return f'GEOHASH(8b)'
+    elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
+        return 'GEOHASH(3c)'
+    elif _GEOHASH_SHORT_MAX < bits <= _GEOHASH_INT_MAX:
+        return 'GEOHASH(6c)'
+    return f'GEOHASH(12c)'
+
+
+def geohash_class(bits):
+    if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_LONG_BITS:
+        raise ArgumentError(f'geohash precision must be int [0, {_GEOHASH_LONG_BITS}]')
+    if 0 < bits <= _GEOHASH_BYTE_MAX:
+        return GeohashByte
+    elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
+        return GeohashShort
+    elif _GEOHASH_SHORT_MAX < bits <= _GEOHASH_INT_MAX:
+        return GeohashInt
+    return GeohashLong
+
+
+class GeohashByte(QDBTypeMixin):
+    __visit_name__ = geohash_type_name(8)
+    type_code = 14
+
+
+class GeohashShort(QDBTypeMixin):
+    __visit_name__ = geohash_type_name(16)
+    type_code = 15
+
+
+class GeohashInt(QDBTypeMixin):
+    __visit_name__ = geohash_type_name(32)
+    type_code = 16
+
+
+class GeohashLong(QDBTypeMixin):
+    __visit_name__ = geohash_type_name(60)
+    type_code = 17
+
+
+class UUID(QDBTypeMixin):
+    __visit_name__ = 'UUID'
+    type_code = 19
+
+
+QUESTDB_TYPES = [
+    Long256,
+    Boolean,
+    Byte,
+    Short,
+    Char,
+    Int,
+    Long,
+    UUID,
+    Float,
+    Double,
+    Date,
+    Timestamp,
+    Symbol,
+    String,
+    GeohashByte,
+    GeohashInt,
+    GeohashShort,
+    GeohashLong,
+]
 
 
 def resolve_type_from_name(type_name):
     type_class = _TYPE_CACHE.get(type_name)
     if not type_class:
-        t_name = type_name.upper()
-        for candidate_class in basic_type_classes:
-            type_class = candidate_class.matches_type_name(t_name)
+        for candidate_class in QUESTDB_TYPES:
+            type_class = candidate_class.matches_type_name(type_name)
             if type_class:
-                _TYPE_CACHE[t_name] = type_class
-                return type_class
-        if 'GEOHASH' in t_name and '(' in t_name and ')' in t_name:
-            open_p = t_name.index('(')
-            close_p = t_name.index(')')
-            description = t_name[open_p + 1:close_p]
-            bits = int(description[:-1])
-            if description[-1] == 'C':
-                bits *= 5
-            t_name = geohash_type_name(bits)
-            type_class = eval(f'Geohash{bits}')
-        if not type_class:
-            raise ArgumentError(f'unsupported type: {type_name}')
-        _TYPE_CACHE[t_name] = type_class
+                _TYPE_CACHE[type_name] = type_class
+                break
+            elif 'GEOHASH' in type_name.upper() and '(' in type_name and ')' in type_name:
+                open_p = type_name.index('(')
+                close_p = type_name.index(')')
+                description = type_name[open_p + 1:close_p]
+                g_size = int(description[:-1])
+                if description[-1] in ('C', 'c'):
+                    g_size *= 5
+                type_class = geohash_class(g_size)
+                break
+    if not type_class:
+        raise ArgumentError(f'unsupported type: {type_name}')
     return type_class
-
-
-_TYPE_CACHE = {
-    # key:   '__visit_name__' of the implementor of QDBTypeMixin
-    # value: implementor class itself
-}
-
-basic_type_classes = [
-    Long256, Boolean, Byte, Short, Char, Int, Long, UUID, Float, Double, Date, Timestamp, Symbol, String
-]
-
-
-class Geohash1(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(1)
-
-
-class Geohash2(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(2)
-
-
-class Geohash3(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(3)
-
-
-class Geohash4(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(4)
-
-
-class Geohash5(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(5)
-
-
-class Geohash6(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(6)
-
-
-class Geohash7(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(7)
-
-
-class Geohash8(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(8)
-
-
-class Geohash9(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(9)
-
-
-class Geohash10(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(10)
-
-
-class Geohash11(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(11)
-
-
-class Geohash12(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(12)
-
-
-class Geohash13(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(13)
-
-
-class Geohash14(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(14)
-
-
-class Geohash15(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(15)
-
-
-class Geohash16(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(16)
-
-
-class Geohash17(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(17)
-
-
-class Geohash18(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(18)
-
-
-class Geohash19(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(19)
-
-
-class Geohash20(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(20)
-
-
-class Geohash21(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(21)
-
-
-class Geohash22(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(22)
-
-
-class Geohash23(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(23)
-
-
-class Geohash24(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(24)
-
-
-class Geohash25(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(25)
-
-
-class Geohash26(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(26)
-
-
-class Geohash27(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(27)
-
-
-class Geohash28(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(28)
-
-
-class Geohash29(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(29)
-
-
-class Geohash30(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(30)
-
-
-class Geohash31(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(31)
-
-
-class Geohash32(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(32)
-
-
-class Geohash33(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(33)
-
-
-class Geohash34(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(34)
-
-
-class Geohash35(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(35)
-
-
-class Geohash36(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(36)
-
-
-class Geohash37(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(37)
-
-
-class Geohash38(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(38)
-
-
-class Geohash39(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(39)
-
-
-class Geohash40(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(40)
-
-
-class Geohash41(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(41)
-
-
-class Geohash42(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(42)
-
-
-class Geohash43(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(43)
-
-
-class Geohash44(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(44)
-
-
-class Geohash45(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(45)
-
-
-class Geohash46(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(46)
-
-
-class Geohash47(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(47)
-
-
-class Geohash48(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(48)
-
-
-class Geohash49(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(49)
-
-
-class Geohash50(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(50)
-
-
-class Geohash51(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(51)
-
-
-class Geohash52(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(52)
-
-
-class Geohash53(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(53)
-
-
-class Geohash54(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(54)
-
-
-class Geohash55(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(55)
-
-
-class Geohash56(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(56)
-
-
-class Geohash57(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(57)
-
-
-class Geohash58(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(58)
-
-
-class Geohash59(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(59)
-
-
-class Geohash60(QDBTypeMixin, sqlalchemy.String):
-    __visit_name__ = geohash_type_name(60)
