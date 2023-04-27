@@ -24,6 +24,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
 from superset.utils import core as utils
@@ -38,6 +39,9 @@ from questdb_connect.function_names import FUNCTION_NAMES
 # https://preset.io/blog/building-database-connector/
 
 
+_MATCH_PUBLIC_SCHEMA = r"(')?(public(?(1)\1)\.)"
+
+
 class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     engine = 'questdb'
     engine_name = 'QuestDB Connect'
@@ -48,6 +52,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     time_secondary_columns = True
     max_column_name_length = 120
     try_remove_schema_from_table_name = True
+    supports_dynamic_schema = False
     _time_grain_expressions = {
         None: '{col}',
         'PT1S': "date_trunc('second', {col})",
@@ -96,6 +101,28 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             parameters.get("username"),
             parameters.get("password"),
             parameters.get("database"))
+
+    @classmethod
+    def get_default_schema_for_query(cls, database, query) -> Optional[str]:
+        return None
+
+    @classmethod
+    def get_allow_cost_estimate(cls, extra: Dict[str, Any]) -> bool:
+        return False
+
+    @classmethod
+    def get_view_names(cls, database, inspector, schema: Optional[str]):
+        return []
+
+    @classmethod
+    def get_text_clause(cls, clause):
+        """SQLAlchemy wrapper to ensure text clauses are escaped properly
+        :param clause: string clause with potentially unescaped characters
+        :return: text clause with escaped characters
+        """
+        if cls.allows_escaped_colons:
+            clause = clause.replace(":", "\\:")
+        return text(re.sub(_MATCH_PUBLIC_SCHEMA, "", clause, flags=re.IGNORECASE | re.MULTILINE))
 
     @classmethod
     def epoch_to_dttm(cls) -> str:

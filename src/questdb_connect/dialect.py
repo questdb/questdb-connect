@@ -95,14 +95,28 @@ def _none(_ignore):
 class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
     schema_for_object = staticmethod(_none)
 
+    def __init__(
+            self,
+            dialect,
+            initial_quote='"',
+            final_quote=None,
+            escape_quote='"',
+            quote_case_sensitive_collations=True,
+            omit_schema=False,
+    ):
+        super().__init__(
+            dialect,
+            "'",
+            final_quote,
+            "'",
+            quote_case_sensitive_collations,
+            True)
+
     def quote_identifier(self, value):
         return quote_identifier(value)
 
     def _requires_quotes(self, _value):
         return True
-
-    def schema_for_object(self, _obj):
-        return None
 
 
 class QDBDDLCompiler(DDLCompiler, abc.ABC):
