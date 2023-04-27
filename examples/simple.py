@@ -103,7 +103,7 @@ def main():
                 col_geohash='dfvgsj2vptwu',
                 col_long256='0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a'
             ))
-            columns = (col.name for col in MyTable.__table__.columns)
+            columns = [col.name for col in MyTable.__table__.columns]
             while True:
                 rs = conn.execute(sqla.text('all_types'))
                 if rs.rowcount:

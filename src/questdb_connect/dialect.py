@@ -52,7 +52,7 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
     def __init__(
             self,
             table_name: str,
-            ts_col_name: str = None,
+            ts_col_name: str,
             partition_by: PartitionBy = PartitionBy.DAY,
             is_wal: bool = True
     ):
