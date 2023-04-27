@@ -22,7 +22,7 @@
 #
 import re
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
@@ -31,6 +31,7 @@ from superset.utils.core import GenericDataType
 
 import questdb_connect.dialect as qdbcd
 from questdb_connect import types
+from questdb_connect.function_names import FUNCTION_NAMES
 
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
@@ -46,6 +47,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     time_groupby_inline = True
     time_secondary_columns = True
     max_column_name_length = 120
+    try_remove_schema_from_table_name = True
     _time_grain_expressions = {
         None: '{col}',
         'PT1S': "date_trunc('second', {col})",
@@ -109,7 +111,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         """Convert a Python `datetime` object to a SQL expression.
         :param target_type: The target type of expression
         :param dttm: The datetime object
-        :param db_extra: The database extra object
         :return: The SQL expression
         """
         type_u = target_type.upper()
@@ -185,3 +186,39 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     @classmethod
     def column_datatype_to_string(cls, sqla_column_type: TypeEngine, *_args):
         return sqla_column_type.__visit_name__
+
+    @classmethod
+    def select_star(
+            cls,
+            database,
+            table_name: str,
+            engine,
+            schema: Optional[str] = None,
+            limit: int = 100,
+            show_cols: bool = False,
+            indent: bool = True,
+            latest_partition: bool = True,
+            cols: Optional[List[Dict[str, Any]]] = None,
+    ) -> str:
+        """Generate a "SELECT * from table_name" query with appropriate limit.
+        :param database: Database instance
+        :param table_name: Table name, unquoted
+        :param engine: SqlAlchemy Engine instance
+        :param schema: Schema, unquoted
+        :param limit: limit to impose on query
+        :param show_cols: Show columns in query; otherwise use "*"
+        :param indent: Add indentation to query
+        :param latest_partition: Only query the latest partition
+        :param cols: Columns to include in query
+        :return: SQL query
+        """
+        return super().select_star(database, table_name, engine, None, limit, show_cols, indent, latest_partition, cols)
+
+    @classmethod
+    def get_function_names(cls, database) -> List[str]:
+        """Get a list of function names that are able to be called on the database.
+        Used for SQL Lab autocomplete.
+        :param database: The database to get functions for
+        :return: A list of function names usable in the database
+        """
+        return FUNCTION_NAMES
