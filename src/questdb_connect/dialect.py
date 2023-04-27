@@ -33,7 +33,6 @@ from sqlalchemy.sql.visitors import Traversible
 
 from questdb_connect.types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
-
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
 
 # ===== SQLAlchemy Dialect ======
