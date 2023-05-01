@@ -21,6 +21,7 @@
 #  limitations under the License.
 #
 import abc
+import re
 
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
@@ -31,7 +32,8 @@ from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
 from sqlalchemy.sql.visitors import Traversible
 
-from questdb_connect.types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
+from . import public_schema_filter
+from .types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
 
@@ -101,22 +103,30 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
             initial_quote='"',
             final_quote=None,
             escape_quote='"',
-            quote_case_sensitive_collations=True,
-            omit_schema=False,
+            quote_case_sensitive_collations=False,
+            omit_schema=True,
     ):
         super().__init__(
-            dialect,
-            "'",
-            final_quote,
-            "'",
-            quote_case_sensitive_collations,
-            True)
+            dialect=dialect,
+            initial_quote=initial_quote,
+            final_quote=final_quote,
+            escape_quote=escape_quote,
+            quote_case_sensitive_collations=quote_case_sensitive_collations,
+            omit_schema=omit_schema)
 
     def quote_identifier(self, value):
         return quote_identifier(value)
 
     def _requires_quotes(self, _value):
         return True
+
+    def format_schema(self, name):
+        """Prepare a quoted schema name."""
+        return ""
+
+    def format_table(self, table, use_schema=True, name=None):
+        """Prepare a quoted table and schema name."""
+        return quote_identifier(name if name else table.name)
 
 
 class QDBDDLCompiler(DDLCompiler, abc.ABC):
@@ -141,6 +151,10 @@ class QDBDDLCompiler(DDLCompiler, abc.ABC):
 class QDBSQLCompiler(SQLCompiler, abc.ABC):
     def _is_safe_for_fast_insert_values_helper(self):
         return True
+
+    def visit_textclause(self, textclause, add_to_result_map=None, **kw):
+        textclause.text = re.sub(public_schema_filter, '', textclause.text)
+        return super().visit_textclause(textclause, add_to_result_map, **kw)
 
 
 class QDBInspector(Inspector, abc.ABC):
@@ -197,6 +211,9 @@ class QDBInspector(Inspector, abc.ABC):
             'persisted': True
         } for row in result_set]
 
+    def get_schema_names(self):
+        return ['public']
+
 
 # class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
 class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
@@ -211,6 +228,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     supports_schemas = False
     supports_statement_cache = False
     supports_server_side_cursors = False
+    supports_native_boolean = True
     supports_views = False
     supports_empty_insert = False
     supports_multivalues_insert = True

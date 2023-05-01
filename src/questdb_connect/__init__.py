@@ -20,7 +20,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+import re
+
 import psycopg2
+import psycopg2.extras
+from psycopg2.extensions import cursor
 
 # ===== DBAPI =====
 
@@ -29,22 +33,36 @@ import psycopg2
 apilevel = '2.0'
 threadsafety = 2
 paramstyle = 'pyformat'
+public_schema_filter = re.compile(r"(')?(public(?(1)\1|)\.)", re.IGNORECASE | re.MULTILINE)
 
 
 class Error(Exception):
     pass
 
 
+class Cursor(cursor):
+    def execute(self, query, vars=None):
+        if isinstance(query, str) and 'public' in query:
+            clean_query = re.sub(public_schema_filter, '', query)
+        else:
+            clean_query = query
+        super().execute(clean_query, vars)
+
+
+def cursor_factory(*args, **kwargs):
+    return Cursor(*args, **kwargs)
+
+
 def connect(**kwargs):
     host = kwargs.get('host') or '127.0.0.1'
     port = kwargs.get('port') or 8812
     user = kwargs.get('username') or 'admin'
-    passwd = kwargs.get('password') or 'quest'
+    password = kwargs.get('password') or 'quest'
     database = kwargs.get('database') or 'main'
     return psycopg2.connect(
+        cursor_factory=cursor_factory,
         host=host,
         port=port,
         user=user,
-        password=passwd,
-        database=database
-    )
+        password=password,
+        database=database)

@@ -105,7 +105,7 @@ def test_model_fixture(test_engine):
 
 def collect_select_all(session, expected_rows) -> str:
     while True:
-        rs = session.execute(text(TEST_TABLE_NAME))
+        rs = session.execute(text(f'select * from public.{TEST_TABLE_NAME} order by 1 asc'))
         if rs.rowcount == expected_rows:
             return '\n'.join(str(row) for row in rs)
 
@@ -115,7 +115,7 @@ def collect_select_all_raw_connection(test_engine, expected_rows) -> str:
     try:
         while True:
             with conn.cursor() as cursor:
-                cursor.execute(TEST_TABLE_NAME)
+                cursor.execute(f'select * from public.{TEST_TABLE_NAME} order by 1 asc')
                 if cursor.rowcount == expected_rows:
                     return '\n'.join(str(row) for row in cursor)
     finally:

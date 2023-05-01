@@ -31,8 +31,9 @@ from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
 import questdb_connect.dialect as qdbcd
-from questdb_connect import types
-from questdb_connect.function_names import FUNCTION_NAMES
+
+from . import types
+from .function_names import FUNCTION_NAMES
 
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
