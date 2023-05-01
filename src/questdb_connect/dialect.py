@@ -32,7 +32,6 @@ from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
 from sqlalchemy.sql.visitors import Traversible
 
-from . import public_schema_filter
 from .types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
@@ -148,12 +147,16 @@ class QDBDDLCompiler(DDLCompiler, abc.ABC):
         return column.type.column_spec(column.name)
 
 
+_public_schema_filter = re.compile(r"(')?(public(?(1)\1|)\.)", re.IGNORECASE | re.MULTILINE)
+
+
 class QDBSQLCompiler(SQLCompiler, abc.ABC):
+
     def _is_safe_for_fast_insert_values_helper(self):
         return True
 
     def visit_textclause(self, textclause, add_to_result_map=None, **kw):
-        textclause.text = re.sub(public_schema_filter, '', textclause.text)
+        textclause.text = re.sub(_public_schema_filter, '', textclause.text)
         return super().visit_textclause(textclause, add_to_result_map, **kw)
 
 
