@@ -115,7 +115,7 @@ def collect_select_all_raw_connection(test_engine, expected_rows) -> str:
     try:
         while True:
             with conn.cursor() as cursor:
-                cursor.execute(f'select * from {TEST_TABLE_NAME} order by 1 asc')
+                cursor.execute(f'select * from public.{TEST_TABLE_NAME} order by 1 asc')
                 if cursor.rowcount == expected_rows:
                     return '\n'.join(str(row) for row in cursor)
     finally:
