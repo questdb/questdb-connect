@@ -24,7 +24,7 @@ import re
 
 import psycopg2
 import psycopg2.extras
-from psycopg2.extensions import cursor
+from psycopg2.extensions import cursor as _cursor
 
 # ===== DBAPI =====
 
@@ -40,13 +40,13 @@ class Error(Exception):
     pass
 
 
-class Cursor(cursor):
+class Cursor(_cursor):
     def execute(self, query, vars=None):
         if isinstance(query, str) and 'public' in query:
             clean_query = re.sub(public_schema_filter, '', query)
         else:
             clean_query = query
-        super().execute(clean_query, vars)
+        return super().execute(clean_query, vars)
 
 
 def cursor_factory(*args, **kwargs):

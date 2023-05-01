@@ -182,9 +182,14 @@ class QDBInspector(Inspector, abc.ABC):
         if not result_set:
             raise NoResultFound(f"Table '{table_name}' does not exist")
         table_attrs = result_set.first()
-        col_ts_name = table_attrs['designatedTimestamp']
-        partition_by = PartitionBy[table_attrs['partitionBy']]
-        is_wal = True if table_attrs['walEnabled'] else False
+        if table_attrs:
+            col_ts_name = table_attrs['designatedTimestamp']
+            partition_by = PartitionBy[table_attrs['partitionBy']]
+            is_wal = True if table_attrs['walEnabled'] else False
+        else:
+            col_ts_name = None
+            partition_by = PartitionBy.NONE
+            is_wal = True
         for row in self.bind.execute(f"table_columns('{table_name}')"):
             col_name = row[0]
             if include_columns and col_name not in include_columns:
