@@ -42,6 +42,8 @@
 #     });
 # }
 #
+from sqlalchemy.exc import ArgumentError
+
 FUNCTION_NAMES = [
     'VARCHAR',
     'abs',
@@ -233,6 +235,17 @@ FUNCTION_NAMES = [
     'year',
 ]
 
-if __name__ == '__main__':
-    for s in sorted(FUNCTION_NAMES):
-        print(f"'{s}',")
+_func_name_set = set(FUNCTION_NAMES)
+
+
+def is_function_call(token):
+    if token:
+        open_p = token.index('(') if '(' in token else None
+        close_p = token.index(')') if ')' in token else None
+        if open_p and close_p:
+            fun_name = token[:open_p]
+        elif not open_p and not close_p:
+            fun_name = token
+        else:
+            raise ArgumentError(f'bad syntax: {token}')
+        return fun_name.lower() in _func_name_set

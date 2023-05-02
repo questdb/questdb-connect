@@ -21,7 +21,6 @@
 #  limitations under the License.
 #
 import abc
-import re
 
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
@@ -33,6 +32,7 @@ from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, Identifier
 from sqlalchemy.sql.visitors import Traversible
 
 from . import remove_public_schema
+from .function_names import is_function_call
 from .types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
@@ -118,7 +118,7 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
         return quote_identifier(value)
 
     def _requires_quotes(self, _value):
-        return True
+        return not is_function_call(_value)
 
     def format_schema(self, name):
         """Prepare a quoted schema name."""
