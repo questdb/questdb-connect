@@ -93,6 +93,20 @@ def _none(_ignore):
     return None
 
 
+_special_chars = {
+    '(', ')', '[', '[]', '{', '}', "'", '"', ':', ';', '.',
+    '!', '%', '&', '*', '$', '@', '~', '^', '-', '?', '/', '\\',
+    ' ', '\t', '\r', '\n'
+}
+
+
+def _has_special_char(_value):
+    for candidate in _value:
+        if candidate in _special_chars:
+            return True
+    return False
+
+
 class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
     schema_for_object = staticmethod(_none)
 
@@ -117,7 +131,7 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
         return quote_identifier(value)
 
     def _requires_quotes(self, _value):
-        return _value and (' ' in _value or '\t' in _value or '~' in _value or ':' in _value or ';' in _value)
+        return _value and _has_special_char(_value)
 
     def format_schema(self, name):
         """Prepare a quoted schema name."""
