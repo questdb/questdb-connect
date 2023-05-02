@@ -32,7 +32,6 @@ from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, Identifier
 from sqlalchemy.sql.visitors import Traversible
 
 from . import remove_public_schema
-from .function_names import is_function_call
 from .types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
@@ -118,7 +117,7 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
         return quote_identifier(value)
 
     def _requires_quotes(self, _value):
-        return not is_function_call(_value)
+        return _value and (' ' in _value or '\t' in _value or '~' in _value or ':' in _value or ';' in _value)
 
     def format_schema(self, name):
         """Prepare a quoted schema name."""
