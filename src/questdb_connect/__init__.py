@@ -23,8 +23,6 @@
 import re
 
 import psycopg2
-import psycopg2.extras
-from psycopg2.extensions import cursor as _cursor
 
 # ===== DBAPI =====
 
@@ -36,17 +34,19 @@ paramstyle = 'pyformat'
 public_schema_filter = re.compile(r"(')?(public(?(1)\1|)\.)", re.IGNORECASE | re.MULTILINE)
 
 
+def remove_public_schema(query):
+    if query and isinstance(query, str) and 'public' in query:
+        return re.sub(public_schema_filter, '', query)
+    return query
+
+
 class Error(Exception):
     pass
 
 
-class Cursor(_cursor):
+class Cursor(psycopg2.extensions.cursor):
     def execute(self, query, vars=None):
-        if isinstance(query, str) and 'public' in query:
-            clean_query = re.sub(public_schema_filter, '', query)
-        else:
-            clean_query = query
-        return super().execute(clean_query, vars)
+        return super().execute(remove_public_schema(query), vars)
 
 
 def cursor_factory(*args, **kwargs):

@@ -32,7 +32,7 @@ from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
 from sqlalchemy.sql.visitors import Traversible
 
-from . import public_schema_filter
+from . import remove_public_schema
 from .types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
@@ -153,7 +153,7 @@ class QDBSQLCompiler(SQLCompiler, abc.ABC):
         return True
 
     def visit_textclause(self, textclause, add_to_result_map=None, **kw):
-        textclause.text = re.sub(public_schema_filter, '', textclause.text)
+        textclause.text = remove_public_schema(textclause.text)
         return super().visit_textclause(textclause, add_to_result_map, **kw)
 
 

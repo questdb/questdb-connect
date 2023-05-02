@@ -32,15 +32,12 @@ from superset.utils.core import GenericDataType
 
 import questdb_connect.dialect as qdbcd
 
-from . import types
+from . import remove_public_schema, types
 from .function_names import FUNCTION_NAMES
 
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
 # https://preset.io/blog/building-database-connector/
-
-
-_MATCH_PUBLIC_SCHEMA = r"(')?(public(?(1)\1)\.)"
 
 
 class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
@@ -123,7 +120,8 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         """
         if cls.allows_escaped_colons:
             clause = clause.replace(":", "\\:")
-        return text(re.sub(_MATCH_PUBLIC_SCHEMA, "", clause, flags=re.IGNORECASE | re.MULTILINE))
+            remove_public_schema(clause)
+        return text(remove_public_schema(clause))
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
