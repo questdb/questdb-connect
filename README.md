@@ -1,6 +1,6 @@
 ## QuestDB Connect
 
-A [SQLAlchemy 2.x](https://docs.sqlalchemy.org/en/20/index.html) dialect for **QuestDB**, created to provide support
+A [SQLAlchemy 1.4](https://docs.sqlalchemy.org/en/14/index.html) dialect for **QuestDB**, created to provide support
 for [apache superset](https://github.com/apache/superset).
 
 ## Requirements
@@ -39,9 +39,10 @@ Start QuestDB and run questdb-connect tests on it:
 docker-compose up
 ```
 
-## Install Apache Superset
+## Install/Run Apache Superset from repo
 
-Within a directory that is a clone of superset:
+As per the instructions [here](https://superset.apache.org/docs/installation/installing-superset-from-scratch/), within 
+a directory that is a clone of superset:
 
 **superset cannot run on python > 3.10.x**
 
@@ -54,6 +55,7 @@ source venv/bin/activate
 pip install -U pip
 pip install -r requirements/local.txt
 pip install -e .
+pip install questdb-connect
 export SUPERSET_SECRET_KEY="laRamonaEsLaMasGordaDeLasMozasDeMiPuebloRamonaTeQuiero" 
 superset fab create-admin \
                     --username miguel \
@@ -66,7 +68,13 @@ superset init
 superset load-examples
 cd superset-frontend 
 npm ci
+npm run build
+cd ..
+
+superset run -p 8088 --with-threads --reload --debugger
 ```
+
+## Install/Run Apache Superset from docker
 
 Directory **superset_toolkit** contains replacement files for the cloned repository:
 
@@ -103,7 +111,14 @@ The server's root directory is:
 
 While running, the server will reload on modification of the python and JavaScript source code.
 
-## Build wheel and publish it
+This will be the URI for QuestDB:
+
+```shell
+questdb://admin:quest@host.docker.internal:8812/main
+```
+
+
+## Build questdb-connect wheel and publish it
 
 Follow the guidelines in [https://packaging.python.org/en/latest/tutorials/packaging-projects/](https://packaging.python.org/en/latest/tutorials/packaging-projects/).
 
@@ -115,5 +130,3 @@ python3 -m pip install --upgrade twine
 python3 -m build
 python3 -m twine upload dist/*
 ```
-
-questdb://admin:quest@host.docker.internal:8812/main
