@@ -22,7 +22,8 @@
 #
 import abc
 
-import sqlalchemy as sqla
+import sqlalchemy
+from sqlalchemy import Column, MetaData, text
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import ArgumentError
@@ -43,7 +44,12 @@ def connection_uri(host: str, port: int, username: str, password: str, database:
 
 
 def create_engine(host: str, port: int, username: str, password: str, database: str = 'main'):
-    return sqla.create_engine(connection_uri(host, port, username, password, database))
+    return sqlalchemy.create_engine(
+        connection_uri(host, port, username, password, database),
+        future=False,
+        hide_parameters=True,
+        implicit_returning=False,
+        isolation_level="REPEATABLE READ")
 
 
 # ===== QUESTDB ENGINE =====
@@ -155,7 +161,7 @@ class QDBDDLCompiler(DDLCompiler, abc.ABC):
         create_table += ', '.join([self.get_column_specification(c.element) for c in create.columns])
         return create_table + ') ' + table.engine.get_table_suffix()
 
-    def get_column_specification(self, column: sqla.Column, **_):
+    def get_column_specification(self, column: Column, **_):
         if not isinstance(column.type, QDBTypeMixin):
             raise ArgumentError('Column type is not a valid QuestDB type')
         return column.type.column_spec(column.name)
@@ -211,11 +217,11 @@ class QDBInspector(Inspector, abc.ABC):
                 continue
             col_type = resolve_type_from_name(row[1])
             if col_ts_name and col_ts_name.upper() == col_name.upper():
-                table.append_column(sqla.Column(col_name, col_type, primary_key=True))
+                table.append_column(Column(col_name, col_type, primary_key=True))
             else:
-                table.append_column(sqla.Column(col_name, col_type))
+                table.append_column(Column(col_name, col_type))
         table.engine = QDBTableEngine(table_name, col_ts_name, partition_by, is_wal)
-        table.metadata = sqla.MetaData()
+        table.metadata = MetaData()
 
     def get_columns(self, table_name, schema=None, **kw):
         result_set = self.bind.execute(f"table_columns('{table_name}')")
@@ -267,7 +273,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
         return ['public']
 
     def get_table_names(self, connection, schema=None, **kw):
-        return [row.table for row in connection.execute(sqla.text('SHOW TABLES'))]
+        return [row.table for row in connection.execute(text('SHOW TABLES'))]
 
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
         return []
@@ -298,7 +304,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
 
     def has_table(self, connection, table_name, schema=None):
         query = f"tables() WHERE name='{table_name}'"
-        result = connection.execute(sqla.text(query))
+        result = connection.execute(text(query))
         return result.rowcount == 1
 
     def has_sequence(self, connection, sequence_name, schema=None, **_kw):

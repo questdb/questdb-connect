@@ -81,3 +81,4 @@ max-args = 10
 "tests/test_types.py" = ["S101"]
 "tests/test_superset.py" = ["S101"]
 "tests/conftest.py" = ["S608"]
+"examples/simple2.py" = ["S608"]
