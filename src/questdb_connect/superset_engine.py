@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
+from superset.sql_parse import ParsedQuery
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
@@ -34,6 +35,7 @@ import questdb_connect.dialect as qdbcd
 
 from . import remove_public_schema, types
 from .function_names import FUNCTION_NAMES
+
 
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
@@ -51,6 +53,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     max_column_name_length = 120
     try_remove_schema_from_table_name = True
     supports_dynamic_schema = False
+    allow_dml = True
     _time_grain_expressions = {
         None: '{col}',
         'PT1S': "date_trunc('second', {col})",
@@ -248,3 +251,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :return: A list of function names usable in the database
         """
         return FUNCTION_NAMES
+
+    @classmethod
+    def is_readonly_query(cls, parsed_query: ParsedQuery) -> bool:
+        return False
