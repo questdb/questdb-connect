@@ -59,8 +59,8 @@ docker-test:
 
 test:
 	python3 -m pytest
-	python3 -m ruff check src/questdb_connect --fix
-	python3 -m ruff check examples --fix
-	python3 -m ruff check tests --fix
+	python3 -m ruff check src/questdb_connect
+	python3 -m ruff check examples
+	python3 -m ruff check tests
 
 -include ../Mk/phonies

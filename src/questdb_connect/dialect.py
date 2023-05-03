@@ -35,9 +35,9 @@ from sqlalchemy.sql.visitors import Traversible
 from . import remove_public_schema
 from .types import PartitionBy, QDBTypeMixin, quote_identifier, resolve_type_from_name
 
+# ===== SQLAlchemy Dialect ======
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
 
-# ===== SQLAlchemy Dialect ======
 
 def connection_uri(host: str, port: int, username: str, password: str, database: str = 'main'):
     return f'questdb://{username}:{password}@{host}:{port}/{database}'
@@ -75,7 +75,7 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
             has_ts = self.ts_col_name is not None
             is_partitioned = self.partition_by and self.partition_by != PartitionBy.NONE
             if has_ts:
-                self.compiled += f'TIMESTAMP({self.ts_col_name})'
+                self.compiled += f'TIMESTAMP("{self.ts_col_name}")'
             if is_partitioned:
                 if not has_ts:
                     raise ArgumentError(None, 'Designated timestamp must be specified for partitioned table')

@@ -55,7 +55,7 @@ source venv/bin/activate
 pip install -U pip
 pip install -r requirements/local.txt
 pip install -e .
-pip install questdb-connect
+pip install sqlparse=='0.4.3'
 export SUPERSET_SECRET_KEY="laRamonaEsLaMasGordaDeLasMozasDeMiPuebloRamonaTeQuiero" 
 superset fab create-admin \
                     --username miguel \
@@ -82,7 +82,7 @@ Directory **superset_toolkit** contains replacement files for the cloned reposit
 - `docker-compose.yaml`: At the root of the clone. Refreshes version of nodejs.
 - `pythonpath_dev`: In directory docker from the root of the clone. _SECRET_KEY_ is defined here.
 
-To build the image:
+To build the image first install superset following the steps above, then build the docker image:
 
 ```shell
 docker build -t apache/superset:latest-dev .

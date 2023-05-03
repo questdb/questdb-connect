@@ -29,6 +29,7 @@ from sqlalchemy.exc import ArgumentError
 
 # ===== QUESTDB PARTITION TYPE =====
 
+
 class PartitionBy(enum.Enum):
     DAY = 0
     MONTH = 1
@@ -84,7 +85,7 @@ def quote_identifier(identifier: str):
         first += 1
     if identifier[last - 1] in _QUOTES:
         last -= 1
-    return f"'{identifier[first:last]}'"
+    return f'"{identifier[first:last]}"'
 
 
 class QDBTypeMixin(sqla.types.TypeDecorator):
