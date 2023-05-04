@@ -79,7 +79,7 @@ def main():
                 else:
                     raise see
 
-                    # create the 'all_types' table
+        # create the 'all_types' table
         Base.metadata.create_all(engine)
 
         # connect with QuestDB
