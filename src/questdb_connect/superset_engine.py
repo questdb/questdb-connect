@@ -27,7 +27,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
-from superset.sql_parse import ParsedQuery
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
@@ -35,7 +34,6 @@ import questdb_connect.dialect as qdbcd
 
 from . import remove_public_schema, types
 from .function_names import FUNCTION_NAMES
-
 
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
@@ -213,10 +211,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)
 
     @classmethod
-    def column_datatype_to_string(cls, sqla_column_type: TypeEngine, *_args):
-        return sqla_column_type.__visit_name__
-
-    @classmethod
     def select_star(
             cls,
             database,
@@ -251,7 +245,3 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :return: A list of function names usable in the database
         """
         return FUNCTION_NAMES
-
-    @classmethod
-    def is_readonly_query(cls, parsed_query: ParsedQuery) -> bool:
-        return False
