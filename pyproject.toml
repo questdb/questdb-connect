@@ -23,7 +23,7 @@
 # https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
 [project]
 name = "questdb-connect"
-version = "0.0.37"
+version = "0.0.38"
 authors = [{ name = "questdb.io", email = "miguel@questdb.io" }]
 description = "SqlAlchemy/Superset libraries."
 readme = "README.md"
@@ -81,4 +81,4 @@ max-args = 10
 "tests/test_types.py" = ["S101"]
 "tests/test_superset.py" = ["S101"]
 "tests/conftest.py" = ["S608"]
-"examples/simple2.py" = ["S608"]
+"examples/sql_alchemy.py" = ["S608"]

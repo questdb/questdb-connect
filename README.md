@@ -1,132 +1,94 @@
 ## QuestDB Connect
 
-A [SQLAlchemy 1.4](https://docs.sqlalchemy.org/en/14/index.html) dialect for **QuestDB**, created to provide support
-for [apache superset](https://github.com/apache/superset).
+This package provides a [SQLAlchemy 1.4](https://docs.sqlalchemy.org/en/14/index.html) dialect for **QuestDB**, 
+as well as an [Apache Superset 2.0](https://github.com/apache/superset) engine specification. 
+
+SQLAlchemy is an open-source SQL toolkit and Object-Relational Mapping (ORM) library for Python. It provides a set 
+of high-level API for communicating with relational databases, including an SQL expression language, schema creation 
+and modification, and database connection management. SQLAlchemy provides a set of core utilities and an ORM layer 
+that abstracts away the details of the database, allowing you to work with Python objects instead of raw SQL statements.
+
+Apache Superset is an open-source business intelligence web application that enables users to explore and visualize 
+data. It offers a rich set of data visualizations, including charts, tables, and maps, that are used for creating  
+custom dashboards and reports.
 
 ## Requirements
 
-* Python from 3.8.x no higher than 3.10.x
+* Python from 3.8.x to no higher than 3.10.x
 * SQLAlchemy 1.4.x
 * Apache Superset 2.x
 
-## Developer installation
+## Installation
 
-Create a `venv` environment:
-
-```shell
-python3 -m venv venv
-source venv/bin/activate
-pip install -U pip
-pip install -e .
-pip install -e '.[test]'
-```
-
-[QuestDB 7.1.2](https://github.com/questdb/questdb/releases), or higher, is required because it has support for 
-implicit cast String -> Long256, and must be up and running. You can start QuestDB using the docker commands bellow.
-
-## Docker commands
-
-Build the docker image and run it:
+You can install this package using pip:
 
 ```shell
-docker build -t questdb/questdb-connect:latest .
-docker run -it questdb/questdb-connect:latest bash
+pip install questdb-connect
 ```
 
-Start QuestDB and run questdb-connect tests on it:
+## Usage
 
-```shell
-docker-compose up
+Use the QuestDB dialect by specifying it in your SQLAlchemy connection string. 
+
+```python
+import sqlalchemy as sqla
+
+
+engine = sqla.create_engine('questdb://localhost:8812/main')
+try:
+    with engine.connect() as conn:
+        pass
+finally:
+    if engine:
+        engine.dispose()
 ```
 
-## Install/Run Apache Superset from repo
+Alternatively,
 
-As per the instructions [here](https://superset.apache.org/docs/installation/installing-superset-from-scratch/), within 
-a directory that is a clone of superset:
 
-**superset cannot run on python > 3.10.x**
+```python
+import datetime
+import os
 
-```shell
-pyenv install 3.10.10
-pyenv local 3.10.10
-python3 --version
-python3 -m venv venv
-source venv/bin/activate
-pip install -U pip
-pip install -r requirements/local.txt
-pip install -e .
-pip install sqlparse=='0.4.3'
-export SUPERSET_SECRET_KEY="laRamonaEsLaMasGordaDeLasMozasDeMiPuebloRamonaTeQuiero" 
-superset fab create-admin \
-                    --username miguel \
-                    --firstname Miguel \
-                    --lastname Arregui \
-                    --email miguel@questdb.io \
-                    --password miguel
-superset db upgrade
-superset init
-superset load-examples
-cd superset-frontend 
-npm ci
-npm run build
-cd ..
+os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
 
-superset run -p 8088 --with-threads --reload --debugger
+import questdb_connect.dialect as qdbc
+from sqlalchemy import Column, MetaData, insert
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base(metadata=MetaData())
+
+
+class Signal(Base):
+    __tablename__ = 'signal'
+    __table_args__ = (
+        qdbc.QDBTableEngine('signal', 'ts', qdbc.PartitionBy.HOUR, is_wal=True),
+    )
+    source = Column(qdbc.Symbol)
+    value = Column(qdbc.Double)
+    ts = Column(qdbc.Timestamp, primary_key=True)
+
+
+def main():
+    engine = qdbc.create_engine('localhost', 8812, 'admin', 'quest')
+    try:
+        Base.metadata.create_all(engine)
+
+        with engine.connect() as conn:
+            conn.execute(insert(Signal).values(
+                source='coconut',
+                value=16.88993244,
+                ts=datetime.datetime.utcnow()
+            ))
+    finally:
+        if engine:
+            engine.dispose()
+
+
+if __name__ == '__main__':
+    main()
 ```
 
-## Install/Run Apache Superset from docker
-
-Directory **superset_toolkit** contains replacement files for the cloned repository:
-
-- `Dockerfile`: At the root of the clone. Mac M1 arm64 architecture changes (this is my laptop).
-- `docker-compose.yaml`: At the root of the clone. Refreshes version of nodejs.
-- `pythonpath_dev`: In directory docker from the root of the clone. _SECRET_KEY_ is defined here.
-
-To build the image first install superset following the steps above, then build the docker image:
-
-```shell
-docker build -t apache/superset:latest-dev .
-```
-
-To run Apache Superset in developer mode:
-
-```shell
-docker-compose up
-```
-
-This takes a while.
-
-The server's root directory is:
-
-- `/app/pythonpath`: mounted from `docker/pythonpath_dev` from the root of the clone. This directory contains
-  a base configuration `superset_config.py` which we replace.
-- to add python packages, for instance to test `questdb-connect` locally, add `./docker/requirements-local.txt`
-  and rebuild the docker stack.
-    1. Create `./docker/requirements-local.txt`
-    2. Add packages
-    3. Rebuild docker-compose
-        1. `docker-compose down -v`
-        2. `docker-compose up`
-    4. Open a browser [http://localhost:8088](http://localhost:8088)
-
-While running, the server will reload on modification of the python and JavaScript source code.
-
-This will be the URI for QuestDB:
-
-```shell
-questdb://admin:quest@host.docker.internal:8812/main
-```
-
-
-## Build questdb-connect wheel and publish it
-
-Follow the guidelines in [https://packaging.python.org/en/latest/tutorials/packaging-projects/](https://packaging.python.org/en/latest/tutorials/packaging-projects/).
-
-
-```shell
-python3 -m pip install --upgrade build
-python3 -m pip install --upgrade twine
-
-python3 -m build
-python3 -m twine upload dist/*
-```
+## Contributing
+This package is open-source, contributions are welcome. If you find a bug or would like to request a feature, 
+please open an issue on the GitHub repository.

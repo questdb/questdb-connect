@@ -36,4 +36,4 @@ RUN rm -rf /var/lib/apt/lists/*
 COPY . /app
 WORKDIR /app
 RUN pip install -U pip && pip install .
-CMD ["python", "examples/simple.py"]
+CMD ["python", "examples/orm.py"]

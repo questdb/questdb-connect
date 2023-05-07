@@ -27,11 +27,9 @@ import time
 
 os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
 
-import questdb_connect.dialect as qdbcd
-import sqlalchemy as sqla
-from questdb_connect import types
-from sqlalchemy import Column
-from sqlalchemy.orm import declarative_base
+import questdb_connect.dialect as qdbc
+from sqlalchemy import Column, MetaData, text
+from sqlalchemy.orm import Session, declarative_base
 
 
 def main():
@@ -40,22 +38,22 @@ def main():
     username = os.environ.get('QUESTDB_CONNECT_USER', 'admin')
     password = os.environ.get('QUESTDB_CONNECT_PASSWORD', 'quest')
     database = os.environ.get('QUESTDB_CONNECT_DATABASE', 'main')
-    engine = qdbcd.create_engine(host, port, username, password, database)
+    engine = qdbc.create_engine(host, port, username, password, database)
     try:
-        Base = declarative_base(metadata=sqla.MetaData())
+        Base = declarative_base(metadata=MetaData())
 
         class Trigonometry(Base):
             __tablename__ = 'trigonometry'
-            __table_args__ = (qdbcd.QDBTableEngine('trigonometry', 'ts'),)
-            angle_dec = Column(types.Double)
-            angle_rad = Column(types.Double)
-            sine = Column(types.Double)
-            cosine = Column(types.Double)
-            tangent = Column(types.Double)
-            ts = Column(types.Timestamp, primary_key=True)
+            __table_args__ = (qdbc.QDBTableEngine('trigonometry', 'ts'),)
+            angle_dec = Column(qdbc.Double)
+            angle_rad = Column(qdbc.Double)
+            sine = Column(qdbc.Double)
+            cosine = Column(qdbc.Double)
+            tangent = Column(qdbc.Double)
+            ts = Column(qdbc.Timestamp, primary_key=True)
 
         Base.metadata.create_all(engine)
-        with sqla.orm.Session(engine) as session:
+        with Session(engine) as session:
             now = datetime.datetime.utcnow
             for angle_dec in range(0, 361):
                 angle_rad = math.radians(angle_dec)
@@ -72,7 +70,7 @@ def main():
 
             columns = [col.name for col in Trigonometry.__table__.columns]
             while True:
-                rs = session.execute(sqla.text(Trigonometry.__tablename__))
+                rs = session.execute(text(Trigonometry.__tablename__))
                 if rs.rowcount:
                     print(f'rows: {rs.rowcount}')
                     for row in rs:

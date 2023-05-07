@@ -27,10 +27,8 @@ import time
 
 os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
 
-import questdb_connect.dialect as qdbcd
-import sqlalchemy as sqla
-from questdb_connect import types
-from sqlalchemy import Column
+import questdb_connect.dialect as qdbc
+from sqlalchemy import Column, MetaData, insert, text
 from sqlalchemy.orm import declarative_base
 
 
@@ -41,31 +39,31 @@ def main():
     username = os.environ.get('QUESTDB_CONNECT_USER', 'admin')
     password = os.environ.get('QUESTDB_CONNECT_PASSWORD', 'quest')
     database = os.environ.get('QUESTDB_CONNECT_DATABASE', 'main')
-    engine = qdbcd.create_engine(host, port, username, password, database)
+    engine = qdbc.create_engine(host, port, username, password, database)
     try:
-        Base = declarative_base(metadata=sqla.MetaData())
+        Base = declarative_base(metadata=MetaData())
 
         table_name = 'all_types'
 
         class MyTable(Base):
             __tablename__ = table_name
             __table_args__ = (
-                qdbcd.QDBTableEngine(table_name, 'col_ts', types.PartitionBy.DAY, is_wal=True),)
-            col_boolean = Column(types.Boolean)
-            col_byte = Column(types.Byte)
-            col_short = Column(types.Short)
-            col_int = Column(types.Int)
-            col_long = Column(types.Long)
-            col_float = Column(types.Float)
-            col_double = Column(types.Double)
-            col_symbol = Column(types.Symbol)
-            col_string = Column(types.String)
-            col_char = Column(types.Char)
-            col_uuid = Column(types.UUID)
-            col_date = Column(types.Date)
-            col_ts = Column(types.Timestamp, primary_key=True)
-            col_geohash = Column(types.GeohashInt)
-            col_long256 = Column(types.Long256)
+                qdbc.QDBTableEngine(table_name, 'col_ts', qdbc.PartitionBy.DAY, is_wal=True),)
+            col_boolean = Column(qdbc.Boolean)
+            col_byte = Column(qdbc.Byte)
+            col_short = Column(qdbc.Short)
+            col_int = Column(qdbc.Int)
+            col_long = Column(qdbc.Long)
+            col_float = Column(qdbc.Float)
+            col_double = Column(qdbc.Double)
+            col_symbol = Column(qdbc.Symbol)
+            col_string = Column(qdbc.String)
+            col_char = Column(qdbc.Char)
+            col_uuid = Column(qdbc.UUID)
+            col_date = Column(qdbc.Date)
+            col_ts = Column(qdbc.Timestamp, primary_key=True)
+            col_geohash = Column(qdbc.GeohashInt)
+            col_long256 = Column(qdbc.Long256)
 
         # delete any previous existing 'all_types' table
         while True:
@@ -86,7 +84,7 @@ def main():
         with engine.connect() as conn:
             # insert a fully populated row
             now = datetime.datetime(2023, 4, 22, 18, 10, 10, 765123)
-            conn.execute(sqla.insert(MyTable).values(
+            conn.execute(insert(MyTable).values(
                 col_boolean=True,
                 col_byte=8,
                 col_short=12,
@@ -105,7 +103,7 @@ def main():
             ))
             columns = [col.name for col in MyTable.__table__.columns]
             while True:
-                rs = conn.execute(sqla.text('all_types'))
+                rs = conn.execute(text('all_types'))
                 if rs.rowcount:
                     print(f'rows: {rs.rowcount}')
                     for row in rs:

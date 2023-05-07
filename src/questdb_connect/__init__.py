@@ -24,8 +24,6 @@ import re
 
 import psycopg2
 
-from .types import *
-
 # ===== DBAPI =====
 
 # https://peps.python.org/pep-0249/
