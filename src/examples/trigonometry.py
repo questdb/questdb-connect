@@ -23,35 +23,34 @@
 import datetime
 import math
 import os
-import time
 
 os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
+
+import time
 
 import questdb_connect.dialect as qdbc
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.orm import Session, declarative_base
 
+from examples import CONNECTION_ATTRS
+
+Base = declarative_base(metadata=MetaData())
+
+
+class Trigonometry(Base):
+    __tablename__ = 'trigonometry'
+    __table_args__ = (qdbc.QDBTableEngine('trigonometry', 'ts'),)
+    angle_dec = Column(qdbc.Double)
+    angle_rad = Column(qdbc.Double)
+    sine = Column(qdbc.Double)
+    cosine = Column(qdbc.Double)
+    tangent = Column(qdbc.Double)
+    ts = Column(qdbc.Timestamp, primary_key=True)
+
 
 def main():
-    host = os.environ.get('QUESTDB_CONNECT_HOST', 'localhost')
-    port = int(os.environ.get('QUESTDB_CONNECT_PORT', '8812'))
-    username = os.environ.get('QUESTDB_CONNECT_USER', 'admin')
-    password = os.environ.get('QUESTDB_CONNECT_PASSWORD', 'quest')
-    database = os.environ.get('QUESTDB_CONNECT_DATABASE', 'main')
-    engine = qdbc.create_engine(host, port, username, password, database)
+    engine = qdbc.create_engine(**CONNECTION_ATTRS)
     try:
-        Base = declarative_base(metadata=MetaData())
-
-        class Trigonometry(Base):
-            __tablename__ = 'trigonometry'
-            __table_args__ = (qdbc.QDBTableEngine('trigonometry', 'ts'),)
-            angle_dec = Column(qdbc.Double)
-            angle_rad = Column(qdbc.Double)
-            sine = Column(qdbc.Double)
-            cosine = Column(qdbc.Double)
-            tangent = Column(qdbc.Double)
-            ts = Column(qdbc.Timestamp, primary_key=True)
-
         Base.metadata.create_all(engine)
         with Session(engine) as session:
             now = datetime.datetime.utcnow
@@ -63,8 +62,7 @@ def main():
                     sine=math.sin(angle_rad),
                     cosine=math.cos(angle_rad),
                     tangent=math.tan(angle_rad),
-                    ts=now()
-                ))
+                    ts=now()))
                 time.sleep(0.0002)
             session.commit()
 

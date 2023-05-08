@@ -52,7 +52,7 @@ DATABASE_HOST = get_env_variable("DATABASE_HOST")
 DATABASE_PORT = get_env_variable("DATABASE_PORT")
 DATABASE_DB = get_env_variable("DATABASE_DB")
 
-SECRET_KEY = "laRamonaEsLaMasGordaDeLasMozasDeMiPuebloRamonaTeQuiero"
+SECRET_KEY = "yourParticularSecretKeyAndMakeSureItIsSecureUnlikeThisOne"
 SUPERSET_SECRET_KEY = SECRET_KEY
 
 # The SQLAlchemy connection string.
