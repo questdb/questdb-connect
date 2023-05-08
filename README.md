@@ -1,27 +1,26 @@
 ## QuestDB Connect
 
-This Python 3 module provides a [SQLAlchemy 1.4](https://docs.sqlalchemy.org/en/14/index.html) dialect
-implementation for **QuestDB**, as well as an [Apache Superset 2.0](https://github.com/apache/superset)
-engine specification, using [psycopg2](https://www.psycopg.org/).
+This module offers an implementation of QuestDB's dialect for [SQLAlchemy](https://www.sqlalchemy.org/), 
+as well as an engine specification for [Apache Superset](https://github.com/apache/superset/), using 
+[psycopg2](https://www.psycopg.org/) for database connectivity.
 
-Psycopg2 is a Python module that provides a way to connect to and interact with PostgreSQL databases. It
-is a widely used and popular library due to its comprehensive support for the PostgreSQL database system,
-and its high level of reliability and stability.
+Psycopg2 is a widely used and trusted Python module for connecting to and working with PostgreSQL databases. 
+It provides a comprehensive set of features for interacting with the PostgreSQL database system.
 
-SQLAlchemy is an open-source SQL toolkit and Object-Relational Mapping (ORM) library for Python. It provides
-a set of high-level API for communicating with relational databases, including an SQL expression language,
-schema creation and modification, and database connection management. SQLAlchemy provides a set of core
-utilities and an ORM layer that abstracts away the details of the database, allowing you to work with Python
-objects instead of raw SQL statements.
+SQLAlchemy is an open-source SQL toolkit and ORM library for Python. It provides a high-level API for 
+communicating with relational databases, including schema creation and modification, an SQL expression 
+language, and database connection management. The ORM layer abstracts away the complexities of the 
+database, allowing developers to work with Python objects instead of raw SQL statements.
 
-Apache Superset is an open-source business intelligence web application that enables users to explore and
-visualize data. It offers a rich set of data visualizations, including charts, tables, and maps, that are
-used for creating custom dashboards and reports.
+Apache Superset is a popular open-source business intelligence web application that enables users to 
+visualize and explore data through customizable dashboards and reports. It provides a rich set of data 
+visualizations, including charts, tables, and maps.
 
 ## Requirements
 
 * Python from 3.8.x to 3.10.x
-* SQLAlchemy 1.4.x to 2.0.x
+* Psycopg2
+* SQLAlchemy
 
 ## Installation
 
