@@ -46,12 +46,7 @@ pip install -r requirements/local.txt
 pip install -e .
 pip install sqlparse=='0.4.3'
 export SUPERSET_SECRET_KEY="yourParticularSecretKeyAndMakeSureItIsSecureUnlikeThisOne" 
-superset fab create-admin \
-                    --username miguel \
-                    --firstname Miguel \
-                    --lastname Arregui \
-                    --email miguel@questdb.io \
-                    --password miguel
+superset fab create-admin
 superset db upgrade
 superset init
 superset load-examples
