@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
-from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
+from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType, TimeGrain
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
@@ -47,6 +47,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     encryption_parameters = {"sslmode": "prefer"}
     sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname[?key=value&key=value...]"
     time_groupby_inline = True
+    allows_hidden_cc_in_orderby=True
     time_secondary_columns = True
     max_column_name_length = 120
     try_remove_schema_from_table_name = True
@@ -123,6 +124,16 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             clause = clause.replace(":", "\\:")
             remove_public_schema(clause)
         return text(remove_public_schema(clause))
+
+    @classmethod
+    def get_time_grains(cls) -> Tuple[TimeGrain, ...]:
+        """Generate a tuple of supported time grains.
+        :return: All time grains supported by the engine
+        """
+        return tuple(
+            TimeGrain(duration, duration, func, duration)
+            for duration, func in cls._time_grain_expressions.copy().items()
+        )
 
     @classmethod
     def epoch_to_dttm(cls) -> str:

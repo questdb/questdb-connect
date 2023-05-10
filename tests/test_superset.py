@@ -24,7 +24,7 @@ import datetime
 
 import pytest
 from questdb_connect.superset_engine import QDBEngineSpec
-from superset.db_engine_specs.base import BasicParametersType
+from superset.db_engine_specs.base import BasicParametersType, TimeGrain
 
 
 def test_build_sqlalchemy_uri():
@@ -72,3 +72,24 @@ def test_convert_dttm(target_type, expected_result, dttm) -> None:
 
 def test_epoch_to_dttm():
     assert QDBEngineSpec.epoch_to_dttm() == '{col} * 1000000'
+
+
+def test_get_time_grains():
+    assert QDBEngineSpec.get_time_grains() == (
+        TimeGrain(name=None, label=None, function='{col}', duration=None),
+        TimeGrain(name='PT1S', label='PT1S', function="date_trunc('second', {col})", duration='PT1S'),
+        TimeGrain(name='PT5S', label='PT5S', function="date_trunc('second', {col}) + 5000000", duration='PT5S'),
+        TimeGrain(name='PT30S', label='PT30S', function="date_trunc('second', {col}) + 30000000", duration='PT30S'),
+        TimeGrain(name='PT1M', label='PT1M', function="date_trunc('minute', {col})", duration='PT1M'),
+        TimeGrain(name='PT5M', label='PT5M', function="date_trunc('minute', {col}) + 300000000", duration='PT5M'),
+        TimeGrain(name='PT10M', label='PT10M', function="date_trunc('minute', {col}) + 600000000", duration='PT10M'),
+        TimeGrain(name='PT15M', label='PT15M', function="date_trunc('minute', {col}) + 900000000", duration='PT15M'),
+        TimeGrain(name='PT30M', label='PT30M', function="date_trunc('minute', {col}) + 1800000000", duration='PT30M'),
+        TimeGrain(name='PT1H', label='PT1H', function="date_trunc('hour', {col})", duration='PT1H'),
+        TimeGrain(name='PT6H', label='PT6H', function="date_trunc('hour', {col})", duration='PT6H'),
+        TimeGrain(name='PT1D', label='PT1D', function="date_trunc('day', {col})", duration='PT1D'),
+        TimeGrain(name='P1W', label='P1W', function="date_trunc('week', {col})", duration='P1W'),
+        TimeGrain(name='P1M', label='P1M', function="date_trunc('month', {col})", duration='P1M'),
+        TimeGrain(name='P1Y', label='P1Y', function="date_trunc('year', {col})", duration='P1Y'),
+        TimeGrain(name='P3M', label='P3M', function="date_trunc('quarter', {col})", duration='P3M')
+    )
