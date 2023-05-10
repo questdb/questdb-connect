@@ -1,1 +1,1 @@
-questdb-connect==0.0.5
+questdb-connect==0.0.41

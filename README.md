@@ -82,4 +82,4 @@ if __name__ == '__main__':
 ## Contributing
 
 This package is open-source, contributions are welcome. If you find a bug or would like to request a feature,
-please open an issue on the GitHub repository.
+please open an issue on the GitHub repository. Have a look at the instructions for [developers](DEVELOPERS.md).
