@@ -81,3 +81,4 @@ max-args = 10
 "tests/test_superset.py" = ["S101"]
 "tests/conftest.py" = ["S608"]
 "src/examples/sqlalchemy_raw.py" = ["S608"]
+"src/examples/server_utilisation.py" = ["S311"]

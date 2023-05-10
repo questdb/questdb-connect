@@ -23,12 +23,10 @@
 
 
 """
-This code makes use of connects to a running QuestDB displays information about the
-tables and partitions in the database. It uses two SQL statements to
-retrieve this information: "tables()" and "table_partitions()". The output
+This code connects to a running QuestDB instance and displays information
+about the tables and partitions in the database. It uses two SQL statements
+to retrieve this information: "tables()" and "table_partitions()". The output
 is formatted and printed to the console.
-
-
 """
 import json
 
