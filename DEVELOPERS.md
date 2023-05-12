@@ -14,7 +14,7 @@ _questdb-connect_ does not have dependencies to other modules, it relies on the 
 **psycopg2**, **SQLAlchemy** and **superset**. When developing however, installing the `.[test]` 
 dependencies takes care of this.
 
-[QuestDB 7.1.2](https://github.com/questdb/questdb/releases), or higher, is required because it has 
+[QuestDB 7.2](https://github.com/questdb/questdb/releases), or higher, is required because it has 
 support for `implicit cast String -> Long256`, and must be up and running.
 
 You can develop in your preferred IDE, and run `make test` in a terminal to check linting and
