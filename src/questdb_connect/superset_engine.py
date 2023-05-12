@@ -126,14 +126,13 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return text(remove_public_schema(clause))
 
     @classmethod
-    def get_time_grains(cls) -> Tuple[TimeGrain, ...]:
-        """Generate a tuple of supported time grains.
-        :return: All time grains supported by the engine
+    def get_time_grain_expressions(cls) -> Dict[Optional[str], str]:
+        """Return a dict of all supported time grains including any
+        potential added grains but excluding any potentially disabled
+        grains in the config file.
+        :return: All time grain expressions supported by the engine
         """
-        return tuple(
-            TimeGrain(duration, duration, func, duration)
-            for duration, func in cls._time_grain_expressions.copy().items()
-        )
+        return cls._time_grain_expressions
 
     @classmethod
     def epoch_to_dttm(cls) -> str:

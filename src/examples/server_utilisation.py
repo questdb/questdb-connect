@@ -23,16 +23,14 @@
 import datetime
 import enum
 import os
-import queue
 import random
-import threading
 import time
 
 os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
 
 import questdb_connect.dialect as qdbc
 from sqlalchemy import Column, MetaData, create_engine, insert
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import Session, declarative_base
 
 
 class BaseEnum(enum.Enum):
@@ -70,60 +68,36 @@ class NodeMetrics(Base):
     ts = Column(qdbc.Timestamp, primary_key=True)
 
 
-def produce_random_metric():
-    return insert(NodeMetrics).values(
-        source=Nodes.rand().name,
-        attr_name=Metrics.rand().name,
-        attr_value=random.random() * 100.0,
-        ts=datetime.datetime.utcnow())
-
-
-class QuestDBWriter(threading.Thread):
-    def __init__(self, runtime_sec: float, queue_depth: int = 1000):
-        super().__init__()
-        self.runtime_sec = runtime_sec
-        self.q = queue.Queue(5000)
-        self.start()
-
-    def write(self, insert_statement):
-        self.q.put_nowait(insert_statement)
-
-    def run(self):
-        engine = create_engine('questdb://localhost:8812/main')
-        try:
-            Base.metadata.create_all(engine)
-            conn = None
-            end_time = time.time() + self.runtime_sec
-            while time.time() < end_time:
-                if not conn:
-                    conn = engine.connect()
-                try:
-                    insert_stmt = self.q.get(block=False)
-                    if insert_stmt is None:
-                        return
-                    conn.execute(insert_stmt)
-                    self.q.task_done()
-                except queue.Empty:
-                    pass
-        finally:
-            if engine:
-                engine.dispose()
-
-
-class Sensor(threading.Thread):
-    def __init__(self, writer):
-        super().__init__()
-        self.writer = writer
-        self.start()
-
-    def run(self):
-        while self.writer.is_alive():
-            self.writer.write(produce_random_metric())
-            time.sleep(0.1)
+def main():
+    end_time = time.time() + 60.0
+    engine = create_engine('questdb://localhost:8812/main')
+    session = Session(engine)
+    max_batch_size = 3000
+    try:
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+        batch_size = 0
+        while time.time() < end_time:
+            session.add(
+                NodeMetrics(
+                    source=Nodes.rand().name,
+                    attr_name=Metrics.rand().name,
+                    attr_value=random.random() * 100.0,
+                    ts=datetime.datetime.utcnow()
+                )
+            )
+            batch_size += 1
+            if batch_size > max_batch_size:
+                session.commit()
+                batch_size = 0
+        if batch_size > 0:
+            session.commit()
+    finally:
+        if session:
+            session.close()
+        if engine:
+            engine.dispose()
 
 
 if __name__ == '__main__':
-    questdb_writer = QuestDBWriter(runtime_sec=5.0)
-    sensors = [Sensor(questdb_writer) for _ in range(12)]
-    for sen in sensors:
-        sen.join()
+    main()

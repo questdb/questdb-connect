@@ -1,5 +1,9 @@
 # QuestDB Connect Changes
 
+## May 12th 2023, release 0.0.42
+
+- improve on time grains
+
 ## May 10th 2023, release 0.0.41
 
 - get time grains
