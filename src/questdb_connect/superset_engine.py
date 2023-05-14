@@ -214,6 +214,12 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             db_extra: Optional[Dict[str, Any]] = None,
             source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
     ) -> Optional[utils.ColumnSpec]:
+        """Get generic type related specs regarding a native column type.
+        :param native_type: Native database type
+        :param db_extra: The database extra object
+        :param source: Type coming from the database table or cursor description
+        :return: ColumnSpec object
+        """
         if not native_type:
             return None
         sqla_type = types.resolve_type_from_name(native_type)
