@@ -307,7 +307,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
         return result.rowcount == 1
 
     def has_sequence(self, connection, sequence_name, schema=None, **_kw):
-        return False
+        return self.has_table(connection, sequence_name)
 
     def do_begin_twophase(self, connection, xid):
         raise NotImplementedError
