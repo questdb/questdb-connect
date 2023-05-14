@@ -115,3 +115,21 @@ def test_time_exp_highr_col_micro_1y():
     col = sqla.Column('col_ts', types.Timestamp, primary_key=True)
     expr = QDBEngineSpec.get_timestamp_expr(col, "epoch_ms", "P1Y")
     assert str(expr.compile(None, dialect=QuestDBDialect())) == "date_trunc('year', (col_ts/1000) * 1000000)"
+
+
+def test_sqlparse():
+    # TODO
+    select_stmt = 'SELECT ts AS __timestamp,'
+    select_stmt += ' attr_name AS attr_name,'
+    select_stmt += ' source AS source,'
+    select_stmt += ' max(attr_value) AS "MAX(attr_value)",'
+    select_stmt += ' AVG(attr_value) AS "AVG(attr_value)",'
+    select_stmt += ' count(attr_value) AS "COUNT(attr_value)"'
+    select_stmt += ' FROM node_metrics'
+    select_stmt += " WHERE ts >= '2023-05-07 00:00:00.000000'"
+    select_stmt += " AND ts < '2023-05-14 00:00:00.000000'"
+    select_stmt += ' GROUP BY attr_name, source, ts'
+    select_stmt += ' ORDER BY "MAX(attr_value)" DESC'
+    select_stmt += ' LIMIT 10000;'
+    parsed = QDBEngineSpec.parse_sql(select_stmt)
+    print(parsed)

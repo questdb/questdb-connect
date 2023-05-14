@@ -69,7 +69,7 @@ class NodeMetrics(Base):
 
 
 def main():
-    end_time = time.time() + 60.0
+    end_time = time.time() + 10.0
     engine = create_engine('questdb://localhost:8812/main')
     session = Session(engine)
     max_batch_size = 3000

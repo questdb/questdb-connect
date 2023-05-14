@@ -24,6 +24,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+import sqlparse
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType, TimeGrain
