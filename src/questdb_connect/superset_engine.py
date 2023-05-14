@@ -47,12 +47,14 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     encryption_parameters = {"sslmode": "prefer"}
     sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname[?key=value&key=value...]"
     time_groupby_inline = True
-    allows_hidden_cc_in_orderby=True
+    allows_hidden_cc_in_orderby = True
     time_secondary_columns = True
     max_column_name_length = 120
     try_remove_schema_from_table_name = True
     supports_dynamic_schema = False
     allow_dml = True
+    supports_file_upload = True
+    top_keywords = {}
     _time_grain_expressions = {
         None: '{col}',
         'PT1S': "date_trunc('second', {col})",
@@ -88,6 +90,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         (re.compile("^DATE", re.IGNORECASE), types.Date, GenericDataType.TEMPORAL),
         (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.GeohashLong, GenericDataType.STRING),
     )
+    column_type_mappings = _default_column_type_mappings
 
     @classmethod
     def build_sqlalchemy_uri(
@@ -122,7 +125,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         """
         if cls.allows_escaped_colons:
             clause = clause.replace(":", "\\:")
-            remove_public_schema(clause)
         return text(remove_public_schema(clause))
 
     @classmethod
@@ -164,19 +166,27 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param type_code: Type code from cursor description
         :return: String representation of type code
         """
-        return type_code.upper() if isinstance(type_code, str) and type_code else None
+        return type_code.upper() if type_code and isinstance(type_code, str) else 'UNKNOWN'
 
     @classmethod
     def get_column_types(
             cls,
             column_type: Optional[str],
     ) -> Optional[Tuple[TypeEngine, GenericDataType]]:
+        """Return a sqlalchemy native column type and generic data type that
+        corresponds to the column type defined in the data source (return None
+        to use default type inferred by SQLAlchemy). Override `column_type_mappings`
+        for specific needs (see MSSQL for example of NCHAR/NVARCHAR handling).
+        :param column_type: Column type returned by inspector
+        :return: SQLAlchemy and generic Superset column types
+        """
         if not column_type:
             return None
         for regex, sqla_type, generic_type in cls._default_column_type_mappings:
             matching_name = regex.search(column_type)
             if matching_name:
-                return types.resolve_type_from_name(sqla_type.__visit_name__), generic_type
+                qdbcd_type = types.resolve_type_from_name(sqla_type.__visit_name__)
+                return qdbcd_type.impl, generic_type
         return None
 
     @classmethod
@@ -194,7 +204,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         """
         if not native_type:
             return None
-        return types.resolve_type_from_name(native_type)
+        return types.resolve_type_from_name(native_type).impl
 
     @classmethod
     def get_column_spec(

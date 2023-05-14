@@ -78,11 +78,12 @@ def main():
         Base.metadata.create_all(engine)
         batch_size = 0
         while time.time() < end_time:
+            node = Nodes.rand()
             session.add(
                 NodeMetrics(
-                    source=Nodes.rand().name,
+                    source=node.name,
                     attr_name=Metrics.rand().name,
-                    attr_value=random.random() * 100.0,
+                    attr_value=random.random() * node.value * random.randint(1, 100),
                     ts=datetime.datetime.utcnow()
                 )
             )

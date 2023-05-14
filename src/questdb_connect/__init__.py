@@ -25,7 +25,6 @@ import re
 import psycopg2
 
 # ===== DBAPI =====
-
 # https://peps.python.org/pep-0249/
 
 apilevel = '2.0'

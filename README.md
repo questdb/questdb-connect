@@ -50,11 +50,7 @@ Base = declarative_base(metadata=MetaData())
 
 class Signal(Base):
     __tablename__ = 'signal'
-    __table_args__ = (qdbc.QDBTableEngine(
-        'signal',
-        'ts',
-        qdbc.PartitionBy.HOUR,
-        is_wal=True),)
+    __table_args__ = (qdbc.QDBTableEngine('signal', 'ts', qdbc.PartitionBy.HOUR, is_wal=True), )
     source = Column(qdbc.Symbol)
     value = Column(qdbc.Double)
     ts = Column(qdbc.Timestamp, primary_key=True)
@@ -82,4 +78,5 @@ if __name__ == '__main__':
 ## Contributing
 
 This package is open-source, contributions are welcome. If you find a bug or would like to request a feature,
-please open an issue on the GitHub repository. Have a look at the instructions for [developers](DEVELOPERS.md).
+please open an issue on the GitHub repository. Have a look at the instructions for [developers](DEVELOPERS.md)
+if you would like to push a PR.
