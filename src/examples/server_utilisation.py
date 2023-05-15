@@ -29,7 +29,7 @@ import time
 os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
 
 import questdb_connect.dialect as qdbc
-from sqlalchemy import Column, MetaData, create_engine, insert
+from sqlalchemy import Column, MetaData, create_engine
 from sqlalchemy.orm import Session, declarative_base
 
 

@@ -24,11 +24,16 @@ import abc
 
 import sqlalchemy
 from sqlalchemy import Column, MetaData, text
-from sqlalchemy.engine.default import DefaultDialect
+from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
-from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
+from sqlalchemy.sql.compiler import (
+    DDLCompiler,
+    GenericTypeCompiler,
+    IdentifierPreparer,
+    SQLCompiler,
+)
 from sqlalchemy.sql.visitors import Traversible
 
 from . import remove_public_schema
@@ -47,7 +52,8 @@ def create_engine(host: str, port: int, username: str, password: str, database: 
         connection_uri(host, port, username, password, database),
         future=False,
         hide_parameters=True,
-        implicit_returning=False)
+        implicit_returning=False,
+        isolation_level="REPEATABLE READ")
 
 
 # ===== QUESTDB ENGINE =====
@@ -237,13 +243,10 @@ class QDBInspector(Inspector, abc.ABC):
         return ['public']
 
 
-# class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
-class QuestDBDialect(DefaultDialect, abc.ABC):
+class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     name = 'questdb'
-    driver = "psycopg2"
     psycopg2_version = (2, 9)
     default_schema_name = 'public'
-    default_paramstyle = 'pyformat'
     statement_compiler = QDBSQLCompiler
     ddl_compiler = QDBDDLCompiler
     type_compiler = GenericTypeCompiler

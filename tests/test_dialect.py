@@ -35,17 +35,15 @@ def test_insert(test_engine, test_model):
         assert not test_engine.dialect.has_table(conn, 'scorchio')
         now = datetime.datetime(2023, 4, 12, 23, 55, 59, 342380)
         now_date = now.date()
-        expected = (
-            "(True, 8, 12, 13, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
-            "'6d5eb038-63d1-4971-8484-30c16e13de5b', datetime.datetime(2023, 4, 12, 0, "
-            "0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
-            "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
-            "(True, 8, 12, 13, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
-            "'6d5eb038-63d1-4971-8484-30c16e13de5b', datetime.datetime(2023, 4, 12, 0, "
-            "0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
-            "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')"
-        )
-        stmt1 = sqla.insert(test_model).values(
+        expected = ("(True, 8, 12, 13, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
+                    "UUID('6d5eb038-63d1-4971-8484-30c16e13de5b'), datetime.datetime(2023, 4, 12, "
+                    "0, 0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
+                    "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
+                    "(True, 8, 12, 13, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
+                    "UUID('6d5eb038-63d1-4971-8484-30c16e13de5b'), datetime.datetime(2023, 4, 12, "
+                    "0, 0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
+                    "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')")
+        insert_stmt = sqla.insert(test_model).values(
             col_boolean=True,
             col_byte=8,
             col_short=12,
@@ -62,8 +60,7 @@ def test_insert(test_engine, test_model):
             col_geohash='dfvgsj2vptwu',
             col_long256='0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a'
         )
-        stmt1.compile()
-        conn.execute(stmt1)
+        conn.execute(insert_stmt)
         conn.execute(sqla.insert(test_model), {
             'col_boolean': True,
             'col_byte': 8,
@@ -138,20 +135,18 @@ def test_multiple_insert(test_engine, test_model):
     now_date = now.date()
     session = Session(test_engine)
     num_rows = 3
-    expected = (
-        "(True, 8, 12, 2, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
-        "'6d5eb038-63d1-4971-8484-30c16e13de5b', datetime.datetime(2023, 4, 12, 0, "
-        "0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
-        "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
-        "(True, 8, 12, 1, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
-        "'6d5eb038-63d1-4971-8484-30c16e13de5b', datetime.datetime(2023, 4, 12, 0, "
-        "0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
-        "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
-        "(True, 8, 12, 0, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
-        "'6d5eb038-63d1-4971-8484-30c16e13de5b', datetime.datetime(2023, 4, 12, 0, "
-        "0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
-        "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')"
-    )
+    expected = ("(True, 8, 12, 2, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
+                "UUID('6d5eb038-63d1-4971-8484-30c16e13de5b'), datetime.datetime(2023, 4, 12, "
+                "0, 0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
+                "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
+                "(True, 8, 12, 1, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
+                "UUID('6d5eb038-63d1-4971-8484-30c16e13de5b'), datetime.datetime(2023, 4, 12, "
+                "0, 0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
+                "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
+                "(True, 8, 12, 0, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
+                "UUID('6d5eb038-63d1-4971-8484-30c16e13de5b'), datetime.datetime(2023, 4, 12, "
+                "0, 0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
+                "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')")
     try:
         for idx in range(num_rows):
             session.add(test_model(
@@ -184,20 +179,18 @@ def test_bulk_insert(test_engine, test_model):
     now_date = now.date()
     session = Session(test_engine)
     num_rows = 3
-    expected = (
-        "(True, 8, 12, 2, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
-        "'6d5eb038-63d1-4971-8484-30c16e13de5b', datetime.datetime(2023, 4, 12, 0, "
-        "0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
-        "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
-        "(True, 8, 12, 1, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
-        "'6d5eb038-63d1-4971-8484-30c16e13de5b', datetime.datetime(2023, 4, 12, 0, "
-        "0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
-        "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
-        "(True, 8, 12, 0, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
-        "'6d5eb038-63d1-4971-8484-30c16e13de5b', datetime.datetime(2023, 4, 12, 0, "
-        "0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
-        "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')"
-    )
+    expected = ("(True, 8, 12, 2, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
+                "UUID('6d5eb038-63d1-4971-8484-30c16e13de5b'), datetime.datetime(2023, 4, 12, "
+                "0, 0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
+                "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
+                "(True, 8, 12, 1, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
+                "UUID('6d5eb038-63d1-4971-8484-30c16e13de5b'), datetime.datetime(2023, 4, 12, "
+                "0, 0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
+                "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')\n"
+                "(True, 8, 12, 0, 14, 15.234, 16.88993244, 'coconut', 'banana', 'C', "
+                "UUID('6d5eb038-63d1-4971-8484-30c16e13de5b'), datetime.datetime(2023, 4, 12, "
+                "0, 0), datetime.datetime(2023, 4, 12, 23, 55, 59, 342380), 'dfvgsj', "
+                "'0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a')")
     models = [
         test_model(
             col_boolean=True,
