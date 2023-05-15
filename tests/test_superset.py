@@ -117,19 +117,36 @@ def test_time_exp_highr_col_micro_1y():
     assert str(expr.compile(None, dialect=QuestDBDialect())) == "date_trunc('year', (col_ts/1000) * 1000000)"
 
 
-def test_sqlparse():
-    # TODO
+def test_parse_sql_removes_timestamp_from_group_by():
     select_stmt = 'SELECT ts AS __timestamp,'
-    select_stmt += ' attr_name AS attr_name,'
-    select_stmt += ' source AS source,'
-    select_stmt += ' max(attr_value) AS "MAX(attr_value)",'
-    select_stmt += ' AVG(attr_value) AS "AVG(attr_value)",'
-    select_stmt += ' count(attr_value) AS "COUNT(attr_value)"'
-    select_stmt += ' FROM node_metrics'
-    select_stmt += " WHERE ts >= '2023-05-07 00:00:00.000000'"
-    select_stmt += " AND ts < '2023-05-14 00:00:00.000000'"
-    select_stmt += ' GROUP BY attr_name, source, ts'
-    select_stmt += ' ORDER BY "MAX(attr_value)" DESC'
-    select_stmt += ' LIMIT 10000;'
-    parsed = QDBEngineSpec.parse_sql(select_stmt)
-    print(parsed)
+    select_stmt += '    attr_name AS attr_name,'
+    select_stmt += '    max(attr_value) AS "MAX(attr_value)",'
+    select_stmt += '    AVG(attr_value) AS "AVG(attr_value)",'
+    select_stmt += '    sum(attr_value) AS "SUM(attr_value)"'
+    select_stmt += '  FROM node_metrics'
+    select_stmt += '  JOIN'
+    select_stmt += '(SELECT attr_name AS attr_name__,'
+    select_stmt += '    max(attr_value) AS mme_inner__'
+    select_stmt += '  FROM node_metrics'
+    select_stmt += "  WHERE ts >= '2023-05-08 00:00:00.000000'"
+    select_stmt += "    AND ts < '2023-05-15 00:00:00.000000'"
+    select_stmt += '  GROUP BY attr_name'
+    select_stmt += '  ORDER BY mme_inner__ DESC'
+    select_stmt += '  LIMIT 500) AS anon_1 ON attr_name = attr_name__'
+    select_stmt += " WHERE ts >= '2023-05-08 00:00:00.000000'"
+    select_stmt += "   AND ts < '2023-05-15 00:00:00.000000'"
+    select_stmt += ' GROUP BY attr_name,'
+    select_stmt += '          ts'
+    select_stmt += '  ORDER BY "MAX(attr_value)" DESC'
+    select_stmt += '  LIMIT 10000'
+    assert QDBEngineSpec.parse_sql(select_stmt) == [
+        'SELECT ts AS __timestamp,    attr_name AS attr_name,    max(attr_value) AS '
+        '"MAX(attr_value)",    AVG(attr_value) AS "AVG(attr_value)",    '
+        'sum(attr_value) AS "SUM(attr_value)"  FROM node_metrics  JOIN(SELECT '
+        'attr_name AS attr_name__,    max(attr_value) AS mme_inner__  FROM '
+        "node_metrics  WHERE ts >= '2023-05-08 00:00:00.000000'    AND ts < "
+        "'2023-05-15 00:00:00.000000'  GROUP BY attr_name  ORDER BY mme_inner__ DESC  "
+        "LIMIT 500) AS anon_1 ON attr_name = attr_name__ WHERE ts >= '2023-05-08 "
+        "00:00:00.000000'   AND ts < '2023-05-15 00:00:00.000000' GROUP BY "
+        'attr_name            ORDER BY "MAX(attr_value)" DESC  LIMIT 10000'
+    ]
