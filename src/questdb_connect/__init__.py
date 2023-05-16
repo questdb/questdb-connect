@@ -87,8 +87,6 @@ class Cursor(psycopg2.extensions.cursor):
         no_public_schema_sql = remove_public_schema(query)
         final_sql = ts_in_group_by_removing_parse_sql(no_public_schema_sql)
         final_sql = final_sql[0] if final_sql else no_public_schema_sql
-        print('FURULULU')
-        print(final_sql)
         return super().execute(final_sql, vars)
 
 
