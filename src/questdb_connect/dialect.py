@@ -29,17 +29,16 @@ from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import (
-    OPERATORS,
     DDLCompiler,
     GenericTypeCompiler,
     IdentifierPreparer,
     SQLCompiler,
-    operators,
 )
 from sqlalchemy.sql.visitors import Traversible
 
 from . import remove_public_schema, ts_in_group_by_removing_parse_sql
 from .types import *
+
 
 # ===== SQLAlchemy Dialect ======
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
@@ -182,18 +181,6 @@ class QDBSQLCompiler(SQLCompiler, abc.ABC):
         final_sql = ts_in_group_by_removing_parse_sql(no_public_schema_sql)
         textclause.text = final_sql[0] if final_sql else no_public_schema_sql
         return super().visit_textclause(textclause, add_to_result_map, **kw)
-
-    def group_by_clause(self, select, **kw):
-        """allow dialects to customize how GROUP BY is rendered."""
-        group_by = self._generate_delimited_list(
-            select._group_by_clauses,
-            OPERATORS[operators.comma_op],
-            **kw
-        )
-        if group_by:
-            return " FUCK OFF GROUP BY " + group_by
-        else:
-            return ""
 
 
 class QDBInspector(Inspector, abc.ABC):

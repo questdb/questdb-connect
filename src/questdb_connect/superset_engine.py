@@ -24,7 +24,6 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from flask_babel import lazy_gettext
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import (
@@ -83,7 +82,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     for duration, func in _time_grain_expressions.items():
         if duration in builtin_time_grains:
             name = builtin_time_grains[duration]
-            ret_list.append(TimeGrain(name, lazy_gettext(name), func, duration))
+            ret_list.append(TimeGrain(name, name, func, duration))
     _engine_time_grains = tuple(ret_list)
     _default_column_type_mappings = (
         (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
