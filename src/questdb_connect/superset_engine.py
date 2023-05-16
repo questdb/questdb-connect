@@ -142,6 +142,15 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return text(remove_public_schema(clause))
 
     @classmethod
+    def get_time_grain_expressions(cls) -> Dict[Optional[str], str]:
+        """Return a dict of all supported time grains including any
+        potential added grains but excluding any potentially disabled
+        grains in the config file.
+        :return: All time grain expressions supported by the engine
+        """
+        return cls._time_grain_expressions
+
+    @classmethod
     def epoch_to_dttm(cls) -> str:
         """SQL expression that converts epoch (seconds) to datetime that can be used in a
         query. The reference column should be denoted as `{col}` in the return
