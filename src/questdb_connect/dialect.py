@@ -21,25 +21,24 @@
 #  limitations under the License.
 #
 import abc
-from typing import List
 
 import sqlalchemy
-import sqlparse
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import (
+    OPERATORS,
     DDLCompiler,
     GenericTypeCompiler,
     IdentifierPreparer,
     SQLCompiler,
+    operators,
 )
 from sqlalchemy.sql.visitors import Traversible
-from sqlparse import tokens as T
 
-from . import remove_public_schema
+from . import remove_public_schema, ts_in_group_by_removing_parse_sql
 from .types import *
 
 # ===== SQLAlchemy Dialect ======
@@ -120,44 +119,6 @@ def _has_special_char(_value):
     return False
 
 
-def parse_sql(sql: str, timestamp_alias: str = '__timestamp') -> List[str]:
-    parsed_sql_text = []
-    for parsed_sql in sqlparse.parse(sql):
-        if parsed_sql.get_type().lower() == 'select':
-            # remove timestamp column from any group by
-            ts_col_name = None
-            has_group_by = False
-            for tok in parsed_sql.tokens:
-                if not ts_col_name and isinstance(tok, sqlparse.sql.IdentifierList):
-                    for select_tok in tok.tokens:
-                        if timestamp_alias in select_tok.value:
-                            ts_col_name = select_tok.normalized
-                            break
-                elif ts_col_name and tok.value.lower() == 'group by':
-                    has_group_by = True
-                elif ts_col_name and has_group_by and isinstance(tok, sqlparse.sql.IdentifierList):
-                    remove_idx = None
-                    comma_idxs = []
-                    for idx, group_tok in enumerate(tok.tokens):
-                        if group_tok.match(T.Punctuation, ','):
-                            comma_idxs.append(idx)
-                        elif group_tok.normalized == ts_col_name:
-                            remove_idx = idx
-                    if remove_idx is not None:
-                        tok.tokens.pop(remove_idx)
-                        if remove_idx == 0:
-                            tok.tokens.pop(comma_idxs[0] - 1)
-                        else:
-                            remove_comma_idx = -1
-                            for i, c_i in enumerate(comma_idxs):
-                                if c_i > remove_idx:
-                                    remove_comma_idx = i - 1
-                                    break
-                            tok.tokens.pop(comma_idxs[remove_comma_idx])
-        parsed_sql_text.append(str(parsed_sql).strip(' ;'))
-    return parsed_sql_text
-
-
 class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
     schema_for_object = staticmethod(_none)
 
@@ -218,9 +179,21 @@ class QDBSQLCompiler(SQLCompiler, abc.ABC):
 
     def visit_textclause(self, textclause, add_to_result_map=None, **kw):
         no_public_schema_sql = remove_public_schema(textclause.text)
-        final_sql = parse_sql(no_public_schema_sql)
+        final_sql = ts_in_group_by_removing_parse_sql(no_public_schema_sql)
         textclause.text = final_sql[0] if final_sql else no_public_schema_sql
         return super().visit_textclause(textclause, add_to_result_map, **kw)
+
+    def group_by_clause(self, select, **kw):
+        """allow dialects to customize how GROUP BY is rendered."""
+        group_by = self._generate_delimited_list(
+            select._group_by_clauses,
+            OPERATORS[operators.comma_op],
+            **kw
+        )
+        if group_by:
+            return " FUCK OFF GROUP BY " + group_by
+        else:
+            return ""
 
 
 class QDBInspector(Inspector, abc.ABC):

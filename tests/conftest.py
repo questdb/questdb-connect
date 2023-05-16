@@ -35,7 +35,8 @@ from sqlalchemy.orm import declarative_base
 os.environ['TZ'] = 'UTC'
 time.tzset()
 
-TEST_TABLE_NAME = 'all_types_table'
+ALL_TYPES_TABLE_NAME = 'all_types_table'
+METRICS_TABLE_NAME = 'metrics_table'
 
 
 class TestConfig(NamedTuple):
@@ -80,8 +81,8 @@ def test_model_fixture(test_engine):
     Base = declarative_base(metadata=MetaData())
 
     class TableModel(Base):
-        __tablename__ = TEST_TABLE_NAME
-        __table_args__ = (qdbc.QDBTableEngine(TEST_TABLE_NAME, 'col_ts', types.PartitionBy.DAY, is_wal=True),)
+        __tablename__ = ALL_TYPES_TABLE_NAME
+        __table_args__ = (qdbc.QDBTableEngine(ALL_TYPES_TABLE_NAME, 'col_ts', types.PartitionBy.DAY, is_wal=True),)
         col_boolean = Column('col_boolean', types.Boolean)
         col_byte = Column('col_byte', types.Byte)
         col_short = Column('col_short', types.Short)
@@ -98,14 +99,31 @@ def test_model_fixture(test_engine):
         col_geohash = Column('col_geohash', types.GeohashInt)
         col_long256 = Column('col_long256', types.Long256)
 
-    TableModel.metadata.drop_all(test_engine)
-    TableModel.metadata.create_all(test_engine)
+    Base.metadata.drop_all(test_engine)
+    Base.metadata.create_all(test_engine)
     return TableModel
+
+
+@pytest.fixture(autouse=True, name='test_metrics')
+def test_metrics_fixture(test_engine):
+    Base = declarative_base(metadata=MetaData())
+
+    class TableMetrics(Base):
+        __tablename__ = METRICS_TABLE_NAME
+        __table_args__ = (qdbc.QDBTableEngine(METRICS_TABLE_NAME, 'ts', types.PartitionBy.HOUR, is_wal=True),)
+        source = Column(qdbc.Symbol)
+        attr_name = Column(qdbc.Symbol)
+        attr_value = Column(qdbc.Double)
+        ts = Column(qdbc.Timestamp, primary_key=True)
+
+    Base.metadata.drop_all(test_engine)
+    Base.metadata.create_all(test_engine)
+    return TableMetrics
 
 
 def collect_select_all(session, expected_rows) -> str:
     while True:
-        rs = session.execute(text(f'select * from public.{TEST_TABLE_NAME} order by 1 asc'))
+        rs = session.execute(text(f'select * from public.{ALL_TYPES_TABLE_NAME} order by 1 asc'))
         if rs.rowcount == expected_rows:
             return '\n'.join(str(row) for row in rs)
 
@@ -115,7 +133,7 @@ def collect_select_all_raw_connection(test_engine, expected_rows) -> str:
     try:
         while True:
             with conn.cursor() as cursor:
-                cursor.execute(f'select * from public.{TEST_TABLE_NAME} order by 1 asc')
+                cursor.execute(f'select * from public.{ALL_TYPES_TABLE_NAME} order by 1 asc')
                 if cursor.rowcount == expected_rows:
                     return '\n'.join(str(row) for row in cursor)
     finally:

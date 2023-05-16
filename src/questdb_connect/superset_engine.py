@@ -24,15 +24,21 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+from flask_babel import lazy_gettext
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
-from superset.db_engine_specs.base import BaseEngineSpec, BasicParametersMixin, BasicParametersType
+from superset.db_engine_specs.base import (
+    BaseEngineSpec,
+    BasicParametersMixin,
+    BasicParametersType,
+    TimeGrain,
+    builtin_time_grains,
+)
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
-import questdb_connect.dialect as qdbcd
-
-from . import remove_public_schema, types
+from . import remove_public_schema, ts_in_group_by_removing_parse_sql, types
+from .dialect import connection_uri
 from .function_names import FUNCTION_NAMES
 
 # https://superset.apache.org/docs/databases/installing-database-drivers
@@ -73,6 +79,12 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         'P1Y': "date_trunc('year', {col})",
         'P3M': "date_trunc('quarter', {col})",
     }
+    ret_list = []
+    for duration, func in _time_grain_expressions.items():
+        if duration in builtin_time_grains:
+            name = builtin_time_grains[duration]
+            ret_list.append(TimeGrain(name, lazy_gettext(name), func, duration))
+    _engine_time_grains = tuple(ret_list)
     _default_column_type_mappings = (
         (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
         (re.compile("^BOOLEAN", re.IGNORECASE), types.Boolean, GenericDataType.BOOLEAN),
@@ -98,7 +110,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             parameters: BasicParametersType,
             encrypted_extra: Optional[Dict[str, str]] = None
     ) -> str:
-        return qdbcd.connection_uri(
+        return connection_uri(
             parameters.get("host"),
             int(parameters.get("port")),
             parameters.get("username"),
@@ -159,6 +171,13 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             dttm_formatted = dttm.isoformat(sep=" ", timespec="microseconds")
             return f"TO_TIMESTAMP('{dttm_formatted}', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')"
         return None
+
+    @classmethod
+    def get_time_grains(cls) -> Tuple[TimeGrain, ...]:
+        """Generate a tuple of supported time grains.
+        :return: All time grains supported by the engine
+        """
+        return cls._engine_time_grains
 
     @classmethod
     def get_datatype(cls, type_code: Any) -> Optional[str]:
@@ -274,4 +293,4 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def parse_sql(cls, sql: str) -> List[str]:
-        return qdbcd.parse_sql(sql, '__timestamp')
+        return ts_in_group_by_removing_parse_sql(sql, '__timestamp')

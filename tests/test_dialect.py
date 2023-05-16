@@ -26,12 +26,12 @@ import sqlalchemy as sqla
 from questdb_connect import types
 from sqlalchemy.orm import Session
 
-from tests.conftest import TEST_TABLE_NAME, collect_select_all, collect_select_all_raw_connection
+from tests.conftest import ALL_TYPES_TABLE_NAME, collect_select_all, collect_select_all_raw_connection
 
 
 def test_insert(test_engine, test_model):
     with test_engine.connect() as conn:
-        assert test_engine.dialect.has_table(conn, TEST_TABLE_NAME)
+        assert test_engine.dialect.has_table(conn, ALL_TYPES_TABLE_NAME)
         assert not test_engine.dialect.has_table(conn, 'scorchio')
         now = datetime.datetime(2023, 4, 12, 23, 55, 59, 342380)
         now_date = now.date()
@@ -109,7 +109,7 @@ def test_inspect(test_engine, test_model):
         if session:
             session.close()
     metadata = sqla.MetaData()
-    table = sqla.Table(TEST_TABLE_NAME, metadata, autoload_with=test_engine)
+    table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
     table_columns = str([(col.name, col.type, col.primary_key) for col in table.columns])
     assert table_columns == str([
         ('col_boolean', types.Boolean(), False),

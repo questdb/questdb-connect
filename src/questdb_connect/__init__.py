@@ -39,13 +39,57 @@ def remove_public_schema(query):
     return query
 
 
+def ts_in_group_by_removing_parse_sql(query: str, timestamp_alias: str = '__timestamp') -> list[str]:
+    import sqlparse
+    parsed_sql_text = []
+    for parsed_sql in sqlparse.parse(query):
+        if parsed_sql.get_type().lower() == 'select':
+            # remove timestamp column from any group by
+            ts_col_name = None
+            has_group_by = False
+            for tok in parsed_sql.tokens:
+                if not ts_col_name and isinstance(tok, sqlparse.sql.IdentifierList):
+                    for select_tok in tok.tokens:
+                        if timestamp_alias in select_tok.value:
+                            ts_col_name = select_tok.normalized
+                            break
+                elif ts_col_name and tok.value.lower() == 'group by':
+                    has_group_by = True
+                elif ts_col_name and has_group_by and isinstance(tok, sqlparse.sql.IdentifierList):
+                    remove_idx = None
+                    comma_idxs = []
+                    for idx, group_tok in enumerate(tok.tokens):
+                        if group_tok.match(sqlparse.tokens.Punctuation, ','):
+                            comma_idxs.append(idx)
+                        elif group_tok.normalized == ts_col_name:
+                            remove_idx = idx
+                    if remove_idx is not None:
+                        tok.tokens.pop(remove_idx)
+                        if remove_idx == 0:
+                            tok.tokens.pop(comma_idxs[0] - 1)
+                        else:
+                            remove_comma_idx = -1
+                            for i, c_i in enumerate(comma_idxs):
+                                if c_i > remove_idx:
+                                    remove_comma_idx = i - 1
+                                    break
+                            tok.tokens.pop(comma_idxs[remove_comma_idx])
+        parsed_sql_text.append(str(parsed_sql).strip(' ;'))
+    return parsed_sql_text
+
+
 class Error(Exception):
     pass
 
 
 class Cursor(psycopg2.extensions.cursor):
     def execute(self, query, vars=None):
-        return super().execute(remove_public_schema(query), vars)
+        no_public_schema_sql = remove_public_schema(query)
+        final_sql = ts_in_group_by_removing_parse_sql(no_public_schema_sql)
+        final_sql = final_sql[0] if final_sql else no_public_schema_sql
+        print('FURULULU')
+        print(final_sql)
+        return super().execute(final_sql, vars)
 
 
 def cursor_factory(*args, **kwargs):
