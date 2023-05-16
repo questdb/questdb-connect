@@ -24,15 +24,14 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from flask_babel import lazy_gettext as _
+from flask_babel import gettext as __
+from marshmallow import Schema, fields
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import (
     BaseEngineSpec,
     BasicParametersMixin,
     BasicParametersType,
-    TimeGrain,
-    builtin_time_grains,
 )
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
@@ -46,12 +45,21 @@ from .function_names import FUNCTION_NAMES
 # https://preset.io/blog/building-database-connector/
 
 
+class QDBParametersSchema(Schema):
+    username = fields.String(allow_none=True, description=__('user'))
+    password = fields.String(allow_none=True, description=__('password'))
+    host = fields.String(required=True, description=__('host'))
+    port = fields.Integer(allow_none=True, description=__('port'))
+    database = fields.String(allow_none=True, description=__('database'))
+
+
 class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     engine = 'questdb'
     engine_name = 'QuestDB Connect'
     default_driver = "psycopg2"
     encryption_parameters = {"sslmode": "prefer"}
-    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname[?key=value&key=value...]"
+    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname"
+    parameters_schema = QDBParametersSchema()
     time_groupby_inline = True
     allows_hidden_cc_in_orderby = True
     time_secondary_columns = True
@@ -79,12 +87,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         'P1Y': "date_trunc('year', {col})",
         'P3M': "date_trunc('quarter', {col})",
     }
-    ret_list = []
-    for duration, func in _time_grain_expressions.items():
-        if duration in builtin_time_grains:
-            name = builtin_time_grains[duration]
-            ret_list.append(TimeGrain(name, _(name), func, duration))
-    _engine_time_grains = tuple(ret_list)
     _default_column_type_mappings = (
         (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
         (re.compile("^BOOLEAN", re.IGNORECASE), types.Boolean, GenericDataType.BOOLEAN),
@@ -140,15 +142,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return text(remove_public_schema(clause))
 
     @classmethod
-    def get_time_grain_expressions(cls) -> Dict[Optional[str], str]:
-        """Return a dict of all supported time grains including any
-        potential added grains but excluding any potentially disabled
-        grains in the config file.
-        :return: All time grain expressions supported by the engine
-        """
-        return cls._time_grain_expressions
-
-    @classmethod
     def epoch_to_dttm(cls) -> str:
         """SQL expression that converts epoch (seconds) to datetime that can be used in a
         query. The reference column should be denoted as `{col}` in the return
@@ -171,13 +164,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             dttm_formatted = dttm.isoformat(sep=" ", timespec="microseconds")
             return f"TO_TIMESTAMP('{dttm_formatted}', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')"
         return None
-
-    @classmethod
-    def get_time_grains(cls) -> Tuple[TimeGrain, ...]:
-        """Generate a tuple of supported time grains.
-        :return: All time grains supported by the engine
-        """
-        return cls._engine_time_grains
 
     @classmethod
     def get_datatype(cls, type_code: Any) -> Optional[str]:
