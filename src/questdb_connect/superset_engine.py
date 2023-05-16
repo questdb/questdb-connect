@@ -71,21 +71,21 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     top_keywords = {}
     _time_grain_expressions = {
         None: '{col}',
-        'PT1S': "date_trunc('second', {col})",
-        'PT5S': "date_trunc('second', {col}) + 5000000",
-        'PT30S': "date_trunc('second', {col}) + 30000000",
-        'PT1M': "date_trunc('minute', {col})",
-        'PT5M': "date_trunc('minute', {col}) + 300000000",
-        'PT10M': "date_trunc('minute', {col}) + 600000000",
-        'PT15M': "date_trunc('minute', {col}) + 900000000",
-        'PT30M': "date_trunc('minute', {col}) + 1800000000",
-        'PT1H': "date_trunc('hour', {col})",
-        'PT6H': "date_trunc('hour', {col})",
-        'PT1D': "date_trunc('day', {col})",
-        'P1W': "date_trunc('week', {col})",
-        'P1M': "date_trunc('month', {col})",
-        'P1Y': "date_trunc('year', {col})",
-        'P3M': "date_trunc('quarter', {col})",
+        "PT1S": "date_trunc('second', {col})",
+        "PT5S": "date_trunc('second', {col}) + 5000000",
+        "PT30S": "date_trunc('second', {col}) + 30000000",
+        "PT1M": "date_trunc('minute', {col})",
+        "PT5M": "date_trunc('minute', {col}) + 300000000",
+        "PT10M": "date_trunc('minute', {col}) + 600000000",
+        "PT15M": "date_trunc('minute', {col}) + 900000000",
+        "PT30M": "date_trunc('minute', {col}) + 1800000000",
+        "PT1H": "date_trunc('hour', {col})",
+        "PT6H": "date_trunc('hour', {col})",
+        "PT1D": "date_trunc('day', {col})",
+        "P1W": "date_trunc('week', {col})",
+        "P1M": "date_trunc('month', {col})",
+        "P1Y": "date_trunc('year', {col})",
+        "P3M": "date_trunc('quarter', {col})"
     }
     _default_column_type_mappings = (
         (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
@@ -102,7 +102,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         (re.compile("^CHAR", re.IGNORECASE), types.Char, GenericDataType.STRING),
         (re.compile("^TIMESTAMP", re.IGNORECASE), types.Timestamp, GenericDataType.TEMPORAL),
         (re.compile("^DATE", re.IGNORECASE), types.Date, GenericDataType.TEMPORAL),
-        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.GeohashLong, GenericDataType.STRING),
+        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.GeohashLong, GenericDataType.STRING)
     )
     column_type_mappings = _default_column_type_mappings
 
@@ -140,15 +140,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         if cls.allows_escaped_colons:
             clause = clause.replace(":", "\\:")
         return text(remove_public_schema(clause))
-
-    @classmethod
-    def get_time_grain_expressions(cls) -> Dict[Optional[str], str]:
-        """Return a dict of all supported time grains including any
-        potential added grains but excluding any potentially disabled
-        grains in the config file.
-        :return: All time grain expressions supported by the engine
-        """
-        return cls._time_grain_expressions
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
