@@ -84,10 +84,7 @@ class Error(Exception):
 
 class Cursor(psycopg2.extensions.cursor):
     def execute(self, query, vars=None):
-        no_public_schema_sql = remove_public_schema(query)
-        final_sql = ts_in_group_by_removing_parse_sql(no_public_schema_sql)
-        final_sql = final_sql[0] if final_sql else no_public_schema_sql
-        return super().execute(final_sql, vars)
+        return super().execute(remove_public_schema(query), vars)
 
 
 def cursor_factory(*args, **kwargs):

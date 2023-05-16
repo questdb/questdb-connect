@@ -24,6 +24,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+from flask_babel import lazy_gettext as _
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import (
@@ -36,7 +37,7 @@ from superset.db_engine_specs.base import (
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
-from . import remove_public_schema, ts_in_group_by_removing_parse_sql, types
+from . import remove_public_schema, types
 from .dialect import connection_uri
 from .function_names import FUNCTION_NAMES
 
@@ -82,7 +83,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     for duration, func in _time_grain_expressions.items():
         if duration in builtin_time_grains:
             name = builtin_time_grains[duration]
-            ret_list.append(TimeGrain(name, name, func, duration))
+            ret_list.append(TimeGrain(name, _(name), func, duration))
     _engine_time_grains = tuple(ret_list)
     _default_column_type_mappings = (
         (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
@@ -289,7 +290,3 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :return: A list of function names usable in the database
         """
         return FUNCTION_NAMES
-
-    @classmethod
-    def parse_sql(cls, sql: str) -> List[str]:
-        return ts_in_group_by_removing_parse_sql(sql, '__timestamp')

@@ -36,9 +36,8 @@ from sqlalchemy.sql.compiler import (
 )
 from sqlalchemy.sql.visitors import Traversible
 
-from . import remove_public_schema, ts_in_group_by_removing_parse_sql
+from . import remove_public_schema
 from .types import *
-
 
 # ===== SQLAlchemy Dialect ======
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
@@ -177,9 +176,7 @@ class QDBSQLCompiler(SQLCompiler, abc.ABC):
         return True
 
     def visit_textclause(self, textclause, add_to_result_map=None, **kw):
-        no_public_schema_sql = remove_public_schema(textclause.text)
-        final_sql = ts_in_group_by_removing_parse_sql(no_public_schema_sql)
-        textclause.text = final_sql[0] if final_sql else no_public_schema_sql
+        textclause.text = remove_public_schema(textclause.text)
         return super().visit_textclause(textclause, add_to_result_map, **kw)
 
 
