@@ -22,23 +22,22 @@
 #
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from flask_babel import gettext as __
 from marshmallow import Schema, fields
 from sqlalchemy.sql import text
-from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import (
     BaseEngineSpec,
     BasicParametersMixin,
     BasicParametersType,
 )
-from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
 from . import remove_public_schema, types
 from .dialect import connection_uri
 from .function_names import FUNCTION_NAMES
+
 
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
@@ -63,30 +62,31 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     time_groupby_inline = True
     allows_hidden_cc_in_orderby = True
     time_secondary_columns = True
-    max_column_name_length = 120
     try_remove_schema_from_table_name = True
     supports_dynamic_schema = False
     allow_dml = True
-    supports_file_upload = True
+    max_column_name_length = 120
     top_keywords = {}
+
     _time_grain_expressions = {
         None: '{col}',
         "PT1S": "date_trunc('second', {col})",
-        "PT5S": "date_trunc('second', {col}) + 5000000",
-        "PT30S": "date_trunc('second', {col}) + 30000000",
+        "PT5S": "date_trunc('second', {col}) + 5000000L",
+        "PT30S": "date_trunc('second', {col}) + 30000000L",
         "PT1M": "date_trunc('minute', {col})",
-        "PT5M": "date_trunc('minute', {col}) + 300000000",
-        "PT10M": "date_trunc('minute', {col}) + 600000000",
-        "PT15M": "date_trunc('minute', {col}) + 900000000",
-        "PT30M": "date_trunc('minute', {col}) + 1800000000",
+        "PT5M": "date_trunc('minute', {col}) + 300000000L",
+        "PT10M": "date_trunc('minute', {col}) + 600000000L",
+        "PT15M": "date_trunc('minute', {col}) + 900000000L",
+        "PT30M": "date_trunc('minute', {col}) + 1800000000L",
         "PT1H": "date_trunc('hour', {col})",
-        # "PT6H": "date_trunc('hour', {col})",
+        "PT6H": "date_trunc('hour', {col}) + 21600000000L",
         "PT1D": "date_trunc('day', {col})",
         "P1W": "date_trunc('week', {col})",
         "P1M": "date_trunc('month', {col})",
         "P1Y": "date_trunc('year', {col})",
         "P3M": "date_trunc('quarter', {col})"
     }
+
     column_type_mappings = (
         (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
         (re.compile("^BOOLEAN", re.IGNORECASE), types.Boolean, GenericDataType.BOOLEAN),
@@ -163,111 +163,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             dttm_formatted = dttm.isoformat(sep=" ", timespec="microseconds")
             return f"TO_TIMESTAMP('{dttm_formatted}', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')"
         return None
-
-    @classmethod
-    def get_datatype(cls, type_code: Any) -> Optional[str]:
-        """Change column type code from cursor description to string representation.
-        :param type_code: Type code from cursor description
-        :return: String representation of type code
-        """
-        return type_code.upper() if type_code and isinstance(type_code, str) else 'UNKNOWN'
-
-    @classmethod
-    def get_column_types(
-            cls,
-            column_type: Optional[str],
-    ) -> Optional[Tuple[TypeEngine, GenericDataType]]:
-        """Return a sqlalchemy native column type and generic data type that
-        corresponds to the column type defined in the data source (return None
-        to use default type inferred by SQLAlchemy). Override `column_type_mappings`
-        for specific needs (see MSSQL for example of NCHAR/NVARCHAR handling).
-        :param column_type: Column type returned by inspector
-        :return: SQLAlchemy and generic Superset column types
-        """
-        if not column_type:
-            return None
-        for regex, sqla_type, generic_type in cls._default_column_type_mappings:
-            matching_name = regex.search(column_type)
-            if matching_name:
-                qdbcd_type = types.resolve_type_from_name(sqla_type.__visit_name__)
-                return qdbcd_type.impl, generic_type
-        return None
-
-    @classmethod
-    def get_sqla_column_type(
-            cls,
-            native_type: Optional[str],
-            db_extra: Optional[Dict[str, Any]] = None,
-            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
-    ) -> Optional[TypeEngine]:
-        """Converts native database type to sqlalchemy column type.
-        :param native_type: Native database type
-        :param db_extra: The database extra object
-        :param source: Type coming from the database table or cursor description
-        :return: ColumnSpec object
-        """
-        if not native_type:
-            return None
-        return types.resolve_type_from_name(native_type).impl
-
-    @classmethod
-    def get_column_spec(
-            cls,
-            native_type: Optional[str],
-            db_extra: Optional[Dict[str, Any]] = None,
-            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
-    ) -> Optional[utils.ColumnSpec]:
-        """Get generic type related specs regarding a native column type.
-        :param native_type: Native database type
-        :param db_extra: The database extra object
-        :param source: Type coming from the database table or cursor description
-        :return: ColumnSpec object
-        """
-        if not native_type:
-            return None
-        sqla_type = types.resolve_type_from_name(native_type)
-        name_u = sqla_type.__visit_name__
-        generic_type = None
-        is_dttm = False
-        if name_u == 'BOOLEAN':
-            generic_type = GenericDataType.BOOLEAN
-        elif name_u in ('BYTE', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE'):
-            generic_type = GenericDataType.NUMERIC
-        elif name_u in ('SYMBOL', 'STRING', 'CHAR', 'LONG256', 'UUID'):
-            generic_type = GenericDataType.STRING
-        elif name_u in ('DATE', 'TIMESTAMP'):
-            generic_type = GenericDataType.TEMPORAL
-            is_dttm = True
-        elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
-            generic_type = GenericDataType.STRING
-        return utils.ColumnSpec(sqla_type.impl, generic_type, is_dttm)
-
-    @classmethod
-    def select_star(
-            cls,
-            database,
-            table_name: str,
-            engine,
-            schema: Optional[str] = None,
-            limit: int = 100,
-            show_cols: bool = False,
-            indent: bool = True,
-            latest_partition: bool = True,
-            cols: Optional[List[Dict[str, Any]]] = None,
-    ) -> str:
-        """Generate a "SELECT * from table_name" query with appropriate limit.
-        :param database: Database instance
-        :param table_name: Table name, unquoted
-        :param engine: SqlAlchemy Engine instance
-        :param schema: Schema, unquoted
-        :param limit: limit to impose on query
-        :param show_cols: Show columns in query; otherwise use "*"
-        :param indent: Add indentation to query
-        :param latest_partition: Only query the latest partition
-        :param cols: Columns to include in query
-        :return: SQL query
-        """
-        return super().select_star(database, table_name, engine, None, limit, show_cols, indent, latest_partition, cols)
 
     @classmethod
     def get_function_names(cls, database) -> List[str]:
