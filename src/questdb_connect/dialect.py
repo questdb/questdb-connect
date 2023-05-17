@@ -233,10 +233,9 @@ class QDBInspector(Inspector, abc.ABC):
             raise NoResultFound(f"Table '{table_name}' does not exist")
         return [{
             'name': row[0],
-            'type': resolve_type_from_name(row[1])(),
+            'type': resolve_type_from_name(row[1]),
             'nullable': True,
             'autoincrement': False,
-            'persisted': True
         } for row in result_set]
 
     def get_schema_names(self):
