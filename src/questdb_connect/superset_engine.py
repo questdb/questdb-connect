@@ -70,24 +70,24 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     supports_file_upload = True
     top_keywords = {}
     _time_grain_expressions = {
-        # None: '{col}',
-        # "PT1S": "date_trunc('second', {col})",
-        # "PT5S": "date_trunc('second', {col}) + 5000000",
-        # "PT30S": "date_trunc('second', {col}) + 30000000",
+        None: '{col}',
+        "PT1S": "date_trunc('second', {col})",
+        "PT5S": "date_trunc('second', {col}) + 5000000",
+        "PT30S": "date_trunc('second', {col}) + 30000000",
         "PT1M": "date_trunc('minute', {col})",
-        # "PT5M": "date_trunc('minute', {col}) + 300000000",
-        # "PT10M": "date_trunc('minute', {col}) + 600000000",
-        # "PT15M": "date_trunc('minute', {col}) + 900000000",
+        "PT5M": "date_trunc('minute', {col}) + 300000000",
+        "PT10M": "date_trunc('minute', {col}) + 600000000",
+        "PT15M": "date_trunc('minute', {col}) + 900000000",
         "PT30M": "date_trunc('minute', {col}) + 1800000000",
         "PT1H": "date_trunc('hour', {col})",
         # "PT6H": "date_trunc('hour', {col})",
-        # "PT1D": "date_trunc('day', {col})",
-        # "P1W": "date_trunc('week', {col})",
-        # "P1M": "date_trunc('month', {col})",
+        "PT1D": "date_trunc('day', {col})",
+        "P1W": "date_trunc('week', {col})",
+        "P1M": "date_trunc('month', {col})",
         "P1Y": "date_trunc('year', {col})",
-        # "P3M": "date_trunc('quarter', {col})"
+        "P3M": "date_trunc('quarter', {col})"
     }
-    _default_column_type_mappings = (
+    column_type_mappings = (
         (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
         (re.compile("^BOOLEAN", re.IGNORECASE), types.Boolean, GenericDataType.BOOLEAN),
         (re.compile("^BYTE", re.IGNORECASE), types.Byte, GenericDataType.BOOLEAN),
@@ -104,7 +104,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         (re.compile("^DATE", re.IGNORECASE), types.Date, GenericDataType.TEMPORAL),
         (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.GeohashLong, GenericDataType.STRING)
     )
-    column_type_mappings = _default_column_type_mappings
 
     @classmethod
     def build_sqlalchemy_uri(
@@ -229,6 +228,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         sqla_type = types.resolve_type_from_name(native_type)
         name_u = sqla_type.__visit_name__
         generic_type = None
+        is_dttm = False
         if name_u == 'BOOLEAN':
             generic_type = GenericDataType.BOOLEAN
         elif name_u in ('BYTE', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE'):
@@ -237,9 +237,10 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             generic_type = GenericDataType.STRING
         elif name_u in ('DATE', 'TIMESTAMP'):
             generic_type = GenericDataType.TEMPORAL
+            is_dttm = True
         elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
             generic_type = GenericDataType.STRING
-        return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)
+        return utils.ColumnSpec(sqla_type.impl, generic_type, is_dttm)
 
     @classmethod
     def select_star(
