@@ -38,10 +38,10 @@ from . import remove_public_schema, types
 from .dialect import connection_uri
 from .function_names import FUNCTION_NAMES
 
-
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
 # https://preset.io/blog/building-database-connector/
+# https://preset.io/blog/improving-apache-superset-integration-database-sqlalchemy/
 
 
 class QDBParametersSchema(Schema):
@@ -65,8 +65,9 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     try_remove_schema_from_table_name = True
     max_column_name_length = 120
     top_keywords = {}
-
+    # https://questdb.io/docs/reference/function/date-time/#date_trunc
     _time_grain_expressions = {
+        None: '{col}',
         "PT1S": "date_trunc('second', {col})",
         "PT5S": "date_trunc('second', {col}) + 5000000L",
         "PT30S": "date_trunc('second', {col}) + 30000000L",
@@ -82,7 +83,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         "P1M": "date_trunc('month', {col})",
         "P1Y": "date_trunc('year', {col})",
         "P3M": "date_trunc('quarter', {col})",
-        "None": '{col}',
     }
 
     column_type_mappings = (
