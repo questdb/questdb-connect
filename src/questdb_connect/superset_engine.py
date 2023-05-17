@@ -239,7 +239,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             generic_type = GenericDataType.TEMPORAL
         elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
             generic_type = GenericDataType.STRING
-        return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)
+        return utils.ColumnSpec(sqla_type.impl, generic_type, generic_type == GenericDataType.TEMPORAL)
 
     @classmethod
     def select_star(
