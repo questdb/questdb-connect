@@ -63,13 +63,10 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     allows_hidden_cc_in_orderby = True
     time_secondary_columns = True
     try_remove_schema_from_table_name = True
-    supports_dynamic_schema = False
-    allow_dml = True
     max_column_name_length = 120
     top_keywords = {}
 
     _time_grain_expressions = {
-        None: '{col}',
         "PT1S": "date_trunc('second', {col})",
         "PT5S": "date_trunc('second', {col}) + 5000000L",
         "PT30S": "date_trunc('second', {col}) + 30000000L",
@@ -84,7 +81,8 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         "P1W": "date_trunc('week', {col})",
         "P1M": "date_trunc('month', {col})",
         "P1Y": "date_trunc('year', {col})",
-        "P3M": "date_trunc('quarter', {col})"
+        "P3M": "date_trunc('quarter', {col})",
+        "None": '{col}',
     }
 
     column_type_mappings = (
