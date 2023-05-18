@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from flask_babel import gettext as __
 from flask_babel import lazy_gettext as _
 from marshmallow import Schema, fields
+from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.sql import text
 from sqlalchemy.types import TypeEngine
 from superset.db_engine_specs.base import (
@@ -235,6 +236,18 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         if not native_type:
             return None
         return types.resolve_type_from_name(native_type).impl
+
+    @classmethod
+    def column_datatype_to_string(cls, sqla_column_type: TypeEngine, dialect: Dialect) -> str:
+        """Convert sqlalchemy column type to string representation.
+        By default, removes collation and character encoding info to avoid
+        unnecessarily long datatypes.
+        :param sqla_column_type: SqlAlchemy column type
+        :param dialect: Sqlalchemy dialect
+        :return: Compiled column type
+        """
+        sqla_column_type = sqla_column_type.copy()
+        return sqla_column_type.compile(dialect=dialect).upper()
 
     @classmethod
     def select_star(

@@ -25,12 +25,11 @@ import abc
 import sqlalchemy
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
-from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy.engine.reflection import Inspector, cache
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import (
     DDLCompiler,
-    GenericTypeCompiler,
     IdentifierPreparer,
     SQLCompiler,
 )
@@ -248,7 +247,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     default_schema_name = 'public'
     statement_compiler = QDBSQLCompiler
     ddl_compiler = QDBDDLCompiler
-    type_compiler = GenericTypeCompiler
+    type_compiler = QDBTypeCompiler
     inspector = QDBInspector
     preparer = QDBIdentifierPreparer
     supports_schemas = False
@@ -332,3 +331,16 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
 
     def get_isolation_level(self, dbapi_connection):
         return None
+
+    @cache
+    def get_columns(self, connection, table_name, schema=None, **kw):
+        query = f"table_columns('{table_name}')"
+        result_set = connection.execute(text(query))
+        if not result_set:
+            raise NoResultFound(f"Table '{table_name}' does not exist")
+        return [{
+            'name': row[0],
+            'type': resolve_type_from_name(row[1])(),
+            'nullable': True,
+            'autoincrement': False,
+        } for row in result_set]
