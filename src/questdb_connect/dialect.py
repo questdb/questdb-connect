@@ -51,9 +51,9 @@ def create_engine(host: str, port: int, username: str, password: str, database: 
     return sqlalchemy.create_engine(
         connection_uri(host, port, username, password, database),
         future=False,
-        hide_parameters=True,
+        hide_parameters=False,
         implicit_returning=False,
-        isolation_level="REPEATABLE READ")
+        isolation_level='REPEATABLE READ')
 
 
 # ===== QUESTDB ENGINE =====
@@ -154,10 +154,10 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
 
 class QDBDDLCompiler(DDLCompiler, abc.ABC):
     def visit_create_schema(self, create, **kw):
-        raise Exception('QuestDB does not support SCHEMAS, there is only "public"')
+        raise Exception("QuestDB does not support SCHEMAS, there is only 'public'")
 
     def visit_drop_schema(self, drop, **kw):
-        raise Exception('QuestDB does not support SCHEMAS, there is only "public"')
+        raise Exception("QuestDB does not support SCHEMAS, there is only 'public'")
 
     def visit_create_table(self, create, **kw):
         table = create.element
