@@ -44,6 +44,7 @@ from . import remove_public_schema, types
 from .dialect import connection_uri
 from .function_names import FUNCTION_NAMES
 
+
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # https://preset.io/blog/building-database-connector/
@@ -72,6 +73,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     max_column_name_length = 120
     supports_dynamic_schema = False
     top_keywords = {}
+    # https://en.wikipedia.org/wiki/ISO_8601#Durations
     # https://questdb.io/docs/reference/function/date-time/#date_trunc
     _time_grain_expressions = {
         None: '{col}',
@@ -85,7 +87,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         "PT30M": "date_trunc('minute', {col}) + 1800000000L",
         "PT1H": "date_trunc('hour', {col})",
         "PT6H": "date_trunc('hour', {col}) + 21600000000L",
-        "PT1D": "date_trunc('day', {col})",
+        "P1D": "date_trunc('day', {col})",
         "P1W": "date_trunc('week', {col})",
         "P1M": "date_trunc('month', {col})",
         "P1Y": "date_trunc('year', {col})",
@@ -93,7 +95,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     }
     ret_list = []
     for duration, func in _time_grain_expressions.items():
-        if duration in builtin_time_grains:
+        if duration:
             name = builtin_time_grains[duration]
             ret_list.append(TimeGrain(name, _(name), func, duration))
     _engine_time_grains = tuple(ret_list)
@@ -115,6 +117,22 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.GeohashLong, GenericDataType.STRING)
     )
     column_type_mappings = _default_column_type_mappings
+    _column_type_to_generic_type_mapping = {  # GEOHASH is treated separately
+        types.Boolean.__visit_name__: GenericDataType.BOOLEAN,
+        types.Byte.__visit_name__: GenericDataType.NUMERIC,
+        types.Short.__visit_name__: GenericDataType.NUMERIC,
+        types.Int.__visit_name__: GenericDataType.NUMERIC,
+        types.Long.__visit_name__: GenericDataType.NUMERIC,
+        types.Float.__visit_name__: GenericDataType.NUMERIC,
+        types.Double.__visit_name__: GenericDataType.NUMERIC,
+        types.Symbol.__visit_name__: GenericDataType.STRING,
+        types.String.__visit_name__: GenericDataType.STRING,
+        types.Char.__visit_name__: GenericDataType.STRING,
+        types.Long256.__visit_name__: GenericDataType.STRING,
+        types.UUID.__visit_name__: GenericDataType.STRING,
+        types.Timestamp.__visit_name__: GenericDataType.TEMPORAL,
+        types.Date.__visit_name__: GenericDataType.TEMPORAL,
+    }
 
     @classmethod
     def build_sqlalchemy_uri(
@@ -216,8 +234,10 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         for regex, sqla_type, generic_type in cls._default_column_type_mappings:
             matching_name = regex.search(column_type)
             if matching_name:
-                qdbcd_type = types.resolve_type_from_name(sqla_type.__visit_name__)
-                return qdbcd_type.impl, generic_type
+                return (
+                    types.resolve_type_from_name(sqla_type.__visit_name__).impl,
+                    generic_type,
+                )
         return None
 
     @classmethod
@@ -302,15 +322,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             return None
         sqla_type = types.resolve_type_from_name(native_type)
         name_u = sqla_type.__visit_name__
-        generic_type = None
-        if name_u == 'BOOLEAN':
-            generic_type = GenericDataType.BOOLEAN
-        elif name_u in ('BYTE', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE'):
-            generic_type = GenericDataType.NUMERIC
-        elif name_u in ('SYMBOL', 'STRING', 'CHAR', 'LONG256', 'UUID'):
-            generic_type = GenericDataType.STRING
-        elif name_u in ('DATE', 'TIMESTAMP'):
-            generic_type = GenericDataType.TEMPORAL
-        elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
+        generic_type = cls._column_type_to_generic_type_mapping.get(name_u)
+        if not generic_type and 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
             generic_type = GenericDataType.STRING
         return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)

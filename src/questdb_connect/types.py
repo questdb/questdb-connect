@@ -33,6 +33,7 @@ from sqlalchemy.exc import (
 from sqlalchemy.sql.compiler import GenericTypeCompiler
 from sqlalchemy.util import raise_
 
+
 # ===== QUESTDB PARTITION TYPE =====
 
 class PartitionBy(enum.Enum):
@@ -279,6 +280,9 @@ class QDBTypeCompiler(GenericTypeCompiler):
         )
 
     def visit_BOOLEAN(self, type_, **kw):
+        return Boolean.__visit_name__
+
+    def visit_BOOL(self, type_, **kw):
         return Boolean.__visit_name__
 
     def visit_BYTE(self, type_, **kw):
