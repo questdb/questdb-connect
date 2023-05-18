@@ -105,6 +105,9 @@ class QDBTypeMixin(sqla.types.TypeDecorator):
     def column_spec(self, column_name):
         return f"{quote_identifier(column_name)} {self.__visit_name__}"
 
+    def _compiler_dispatch(cls, _visitor, **_kw) -> str:
+        return cls.__visit_name__
+
 
 class Boolean(QDBTypeMixin):
     __visit_name__ = 'BOOLEAN'
@@ -252,44 +255,6 @@ def resolve_type_from_name(type_name):
 class QDBTypeCompiler(GenericTypeCompiler):
     ensure_kwarg = None
 
-    def visit_GEOHASHINT(self, type_, **kw):
-        return GeohashInt.__visit_name__
-
-    def visit_GeohashInt(self, type_, **kw):
-        return GeohashInt.__visit_name__
-
-    def visit_GEOHASHLONG(self, type_, **kw):
-        return GeohashLong.__visit_name__
-
-    def visit_GeohashLong(self, type_, **kw):
-        return GeohashLong.__visit_name__
-
-    def visit_GEOHASHBYTE(self, type_, **kw):
-        return GeohashByte.__visit_name__
-
-    def visit_GeohashByte(self, type_, **kw):
-        return GeohashByte.__visit_name__
-
-    def visit_GEOHASHSHORT(self, type_, **kw):
-        return GeohashShort.__visit_name__
-
-    def visit_GeohashShort(self, type_, **kw):
-        return GeohashShort.__visit_name__
-
-    def visit_unsupported_compilation(self, element, err, **kw):
-        if isinstance(element, GeohashLong):
-            return GeohashLong.__visit_name__
-        if isinstance(element, GeohashInt):
-            return GeohashInt.__visit_name__
-        if isinstance(element, GeohashShort):
-            return GeohashShort.__visit_name__
-        if isinstance(element, GeohashByte):
-            return GeohashByte.__visit_name__
-        raise_(
-            UnsupportedCompilationError(self, element),
-            replace_context=err,
-        )
-
     def visit_BOOLEAN(self, type_, **kw):
         return Boolean.__visit_name__
 
@@ -389,11 +354,43 @@ class QDBTypeCompiler(GenericTypeCompiler):
     def _render_string_type(self, type_, name):
         return name
 
+    def visit_GEOHASHINT(self, type_, **kw):
+        return GeohashInt.__visit_name__
+
+    def visit_GeohashInt(self, type_, **kw):
+        return GeohashInt.__visit_name__
+
+    def visit_GEOHASHLONG(self, type_, **kw):
+        return GeohashLong.__visit_name__
+
+    def visit_GeohashLong(self, type_, **kw):
+        return GeohashLong.__visit_name__
+
+    def visit_GEOHASHBYTE(self, type_, **kw):
+        return GeohashByte.__visit_name__
+
+    def visit_GeohashByte(self, type_, **kw):
+        return GeohashByte.__visit_name__
+
+    def visit_GEOHASHSHORT(self, type_, **kw):
+        return GeohashShort.__visit_name__
+
+    def visit_GeohashShort(self, type_, **kw):
+        return GeohashShort.__visit_name__
+
+    def visit_unsupported_compilation(self, element, err, **kw):
+        if isinstance(element, GeohashLong):
+            return GeohashLong.__visit_name__
+        if isinstance(element, GeohashInt):
+            return GeohashInt.__visit_name__
+        if isinstance(element, GeohashShort):
+            return GeohashShort.__visit_name__
+        if isinstance(element, GeohashByte):
+            return GeohashByte.__visit_name__
+        raise_(
+            UnsupportedCompilationError(self, element),
+            replace_context=err,
+        )
+
     def visit_null(self, type_, **kw):
         raise CompileError(f'cannot generate DDL for type: {type_}')
-
-    def visit_type_decorator(self, type_, **kw):
-        return self.process(type_.type_engine(self.dialect), **kw)
-
-    def visit_user_defined(self, type_, **kw):
-        return type_.get_col_spec(**kw)
