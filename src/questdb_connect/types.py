@@ -33,8 +33,8 @@ from sqlalchemy.exc import (
 from sqlalchemy.sql.compiler import GenericTypeCompiler
 from sqlalchemy.util import raise_
 
-# ===== QUESTDB PARTITION TYPE =====
 
+# ===== QUESTDB PARTITION TYPE =====
 
 class PartitionBy(enum.Enum):
     DAY = 0
@@ -256,25 +256,13 @@ class QDBTypeCompiler(GenericTypeCompiler):
     def visit_GEOHASHINT(self, type_, **kw):
         return GeohashInt.__visit_name__
 
-    def visit_GeohashInt(self, type_, **kw):
-        return GeohashInt.__visit_name__
-
     def visit_GEOHASHLONG(self, type_, **kw):
-        return GeohashLong.__visit_name__
-
-    def visit_GeohashLong(self, type_, **kw):
         return GeohashLong.__visit_name__
 
     def visit_GEOHASHBYTE(self, type_, **kw):
         return GeohashByte.__visit_name__
 
-    def visit_GeohashByte(self, type_, **kw):
-        return GeohashByte.__visit_name__
-
     def visit_GEOHASHSHORT(self, type_, **kw):
-        return GeohashShort.__visit_name__
-
-    def visit_GeohashShort(self, type_, **kw):
         return GeohashShort.__visit_name__
 
     def visit_unsupported_compilation(self, element, err, **kw):
@@ -294,104 +282,53 @@ class QDBTypeCompiler(GenericTypeCompiler):
     def visit_BOOLEAN(self, type_, **kw):
         return Boolean.__visit_name__
 
-    def visit_boolean(self, type_, **kw):
-        return Boolean.__visit_name__
-
     def visit_BYTE(self, type_, **kw):
-        return Byte.__visit_name__
-
-    def visit_byte(self, type_, **kw):
         return Byte.__visit_name__
 
     def visit_SHORT(self, type_, **kw):
         return Short.__visit_name__
 
-    def visit_short(self, type_, **kw):
-        return Short.__visit_name__
-
     def visit_CHAR(self, type_, **kw):
-        return Char.__visit_name__
-
-    def visit_char(self, type_, **kw):
         return Char.__visit_name__
 
     def visit_INT(self, type_, **kw):
         return Int.__visit_name__
 
-    def visit_int(self, type_, **kw):
-        return Int.__visit_name__
-
     def visit_INTEGER(self, type_, **kw):
-        return Int.__visit_name__
-
-    def visit_integer(self, type_, **kw):
         return Int.__visit_name__
 
     def visit_LONG(self, type_, **kw):
         return Long.__visit_name__
 
-    def visit_long(self, type_, **kw):
-        return Long.__visit_name__
-
     def visit_FLOAT(self, type_, **kw):
-        return Float.__visit_name__
-
-    def visit_float(self, type_, **kw):
         return Float.__visit_name__
 
     def visit_TIMESTAMP(self, type_, **kw):
         return Timestamp.__visit_name__
 
-    def visit_timestamp(self, type_, **kw):
-        return Timestamp.__visit_name__
-
-    def visit_DATETIME(self, type_, **kw):
-        return Timestamp.__visit_name__
-
-    def visit_datetime(self, type_, **kw):
-        return Timestamp.__visit_name__
-
     def visit_DATE(self, type_, **kw):
-        return Date.__visit_name__
-
-    def visit_date(self, type_, **kw):
         return Date.__visit_name__
 
     def visit_UUID(self, type_, **kw):
         return UUID.__visit_name__
 
-    def visit_uuid(self, type_, **kw):
-        return UUID.__visit_name__
-
     def visit_LONG256(self, type_, **kw):
-        return Long256.__visit_name__
-
-    def visit_long256(self, type_, **kw):
         return Long256.__visit_name__
 
     def visit_DOUBLE(self, type_, **kw):
         return Double.__visit_name__
 
-    def visit_double(self, type_, **kw):
-        return Double.__visit_name__
-
     def visit_STRING(self, type_, **kw):
         return String.__visit_name__
 
-    def visit_string(self, type_, **kw):
-        return String.__visit_name__
-
     def visit_SYMBOL(self, type_, **kw):
-        return Symbol.__visit_name__
-
-    def visit_symbol(self, type_, **kw):
         return Symbol.__visit_name__
 
     def _render_string_type(self, type_, name):
         return name
 
     def visit_null(self, type_, **kw):
-        raise CompileError(f"Can't generate DDL for type: {type_}")
+        raise CompileError(f'cannot generate DDL for type: {type_}')
 
     def visit_type_decorator(self, type_, **kw):
         return self.process(type_.type_engine(self.dialect), **kw)

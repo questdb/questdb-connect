@@ -21,7 +21,7 @@
 #  limitations under the License.
 #
 import abc
-
+import logging
 import sqlalchemy
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
@@ -37,6 +37,9 @@ from sqlalchemy.sql.visitors import Traversible
 
 from . import remove_public_schema
 from .types import *
+
+logger = logging.getLogger(__name__)
+
 
 # ===== SQLAlchemy Dialect ======
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
@@ -144,7 +147,7 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
 
     def format_schema(self, name):
         """Prepare a quoted schema name."""
-        return ""
+        return ''
 
     def format_table(self, table, use_schema=True, name=None):
         """Prepare a quoted table and schema name."""
@@ -334,8 +337,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
 
     @cache
     def get_columns(self, connection, table_name, schema=None, **kw):
-        query = f"table_columns('{table_name}')"
-        result_set = connection.execute(text(query))
+        result_set = connection.execute(text(f"table_columns('{table_name}')"))
         if not result_set:
             raise NoResultFound(f"Table '{table_name}' does not exist")
         return [{
