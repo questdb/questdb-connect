@@ -59,7 +59,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     engine_name = 'QuestDB Connect'
     default_driver = "psycopg2"
     encryption_parameters = {"sslmode": "prefer"}
-    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname[?key=value&key=value...]"
+    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname"
     parameters_schema = QDBParametersSchema()
     time_groupby_inline = True
     allows_hidden_cc_in_orderby = True
@@ -121,7 +121,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def get_default_schema_for_query(cls, database, query) -> Optional[str]:
-        return None
+        return ['public']
 
     @classmethod
     def get_allow_cost_estimate(cls, extra: Dict[str, Any]) -> bool:
