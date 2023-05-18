@@ -22,6 +22,7 @@
 #
 import abc
 import logging
+
 import sqlalchemy
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
