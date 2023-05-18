@@ -98,25 +98,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             name = builtin_time_grains[duration]
             ret_list.append(TimeGrain(name, _(name), func, duration))
     _engine_time_grains = tuple(ret_list)
-    _default_column_type_mappings = (
-        (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
-        (re.compile("^BOOLEAN", re.IGNORECASE), types.Boolean, GenericDataType.BOOLEAN),
-        (re.compile("^BYTE", re.IGNORECASE), types.Byte, GenericDataType.BOOLEAN),
-        (re.compile("^SHORT", re.IGNORECASE), types.Short, GenericDataType.NUMERIC),
-        (re.compile("^INT", re.IGNORECASE), types.Int, GenericDataType.NUMERIC),
-        (re.compile("^LONG", re.IGNORECASE), types.Long, GenericDataType.NUMERIC),
-        (re.compile("^FLOAT", re.IGNORECASE), types.Float, GenericDataType.NUMERIC),
-        (re.compile("^DOUBLE'", re.IGNORECASE), types.Double, GenericDataType.NUMERIC),
-        (re.compile("^SYMBOL", re.IGNORECASE), types.Symbol, GenericDataType.STRING),
-        (re.compile("^STRING", re.IGNORECASE), types.String, GenericDataType.STRING),
-        (re.compile("^UUID", re.IGNORECASE), types.UUID, GenericDataType.STRING),
-        (re.compile("^CHAR", re.IGNORECASE), types.Char, GenericDataType.STRING),
-        (re.compile("^TIMESTAMP", re.IGNORECASE), types.Timestamp, GenericDataType.TEMPORAL),
-        (re.compile("^DATE", re.IGNORECASE), types.Date, GenericDataType.TEMPORAL),
-        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.GeohashLong, GenericDataType.STRING)
-    )
-    column_type_mappings = _default_column_type_mappings
-    _column_type_to_generic_type_mapping = {  # GEOHASH is treated separately
+    _column_type_to_generic_type_mapping = {
         types.Boolean.__visit_name__: GenericDataType.BOOLEAN,
         types.Byte.__visit_name__: GenericDataType.NUMERIC,
         types.Short.__visit_name__: GenericDataType.NUMERIC,
@@ -131,6 +113,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         types.UUID.__visit_name__: GenericDataType.STRING,
         types.Timestamp.__visit_name__: GenericDataType.TEMPORAL,
         types.Date.__visit_name__: GenericDataType.TEMPORAL,
+        # GEOHASH (GenericDataType.STRING) is treated separately
     }
 
     @classmethod
@@ -228,16 +211,8 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param column_type: Column type returned by inspector
         :return: SQLAlchemy and generic Superset column types
         """
-        if not column_type:
-            return None
-        for regex, sqla_type, generic_type in cls._default_column_type_mappings:
-            matching_name = regex.search(column_type)
-            if matching_name:
-                return (
-                    types.resolve_type_from_name(sqla_type.__visit_name__).impl,
-                    generic_type,
-                )
-        return None
+        column_spec = cls.get_column_spec()
+        return column_spec.sqla_type, column_spec.generic_type
 
     @classmethod
     def get_sqla_column_type(

@@ -232,6 +232,12 @@ class QDBInspector(Inspector, abc.ABC):
 
     def get_columns(self, table_name, schema=None, **kw):
         result_set = self.bind.execute(f"table_columns('{table_name}')")
+        return self.format_table_columns(table_name, result_set)
+
+    def get_schema_names(self):
+        return ['public']
+
+    def format_table_columns(self, table_name, result_set):
         if not result_set:
             raise NoResultFound(f"Table '{table_name}' does not exist")
         return [{
@@ -240,9 +246,6 @@ class QDBInspector(Inspector, abc.ABC):
             'nullable': True,
             'autoincrement': False,
         } for row in result_set]
-
-    def get_schema_names(self):
-        return ['public']
 
 
 class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
@@ -280,6 +283,16 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     def get_table_names(self, connection, schema=None, **kw):
         return [row.table for row in connection.execute(text('SHOW TABLES'))]
 
+    def has_table(self, connection, table_name, schema=None):
+        query = f"tables() WHERE name='{table_name}'"
+        result = connection.execute(text(query))
+        return result.rowcount == 1
+
+    @cache
+    def get_columns(self, connection, table_name, schema=None, **kw):
+        result_set = connection.execute(text(f"table_columns('{table_name}')"))
+        return self.inspector.format_table_columns(table_name, result_set)
+
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
         return []
 
@@ -307,11 +320,6 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         return []
 
-    def has_table(self, connection, table_name, schema=None):
-        query = f"tables() WHERE name='{table_name}'"
-        result = connection.execute(text(query))
-        return result.rowcount == 1
-
     def has_sequence(self, connection, sequence_name, schema=None, **_kw):
         return False
 
@@ -335,15 +343,3 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
 
     def get_isolation_level(self, dbapi_connection):
         return None
-
-    @cache
-    def get_columns(self, connection, table_name, schema=None, **kw):
-        result_set = connection.execute(text(f"table_columns('{table_name}')"))
-        if not result_set:
-            raise NoResultFound(f"Table '{table_name}' does not exist")
-        return [{
-            'name': row[0],
-            'type': resolve_type_from_name(row[1])(),
-            'nullable': True,
-            'autoincrement': False,
-        } for row in result_set]
