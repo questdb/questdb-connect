@@ -141,15 +141,15 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     def get_view_names(cls, database, inspector, schema: Optional[str]):
         return []
 
-    @classmethod
-    def get_text_clause(cls, clause):
-        """SQLAlchemy wrapper to ensure text clauses are escaped properly
-        :param clause: string clause with potentially unescaped characters
-        :return: text clause with escaped characters
-        """
-        if cls.allows_escaped_colons:
-            clause = clause.replace(":", "\\:")
-        return text(remove_public_schema(clause))
+    # @classmethod
+    # def get_text_clause(cls, clause):
+    #     """SQLAlchemy wrapper to ensure text clauses are escaped properly
+    #     :param clause: string clause with potentially unescaped characters
+    #     :return: text clause with escaped characters
+    #     """
+    #     if cls.allows_escaped_colons:
+    #         clause = clause.replace(":", "\\:")
+    #     return text(remove_public_schema(clause))
 
     @classmethod
     def get_time_grain_expressions(cls) -> Dict[Optional[str], str]:
