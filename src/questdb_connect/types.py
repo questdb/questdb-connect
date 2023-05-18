@@ -33,7 +33,6 @@ from sqlalchemy.exc import (
 from sqlalchemy.sql.compiler import GenericTypeCompiler
 from sqlalchemy.util import raise_
 
-
 # ===== QUESTDB PARTITION TYPE =====
 
 class PartitionBy(enum.Enum):

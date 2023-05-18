@@ -44,7 +44,6 @@ from . import remove_public_schema, types
 from .dialect import connection_uri
 from .function_names import FUNCTION_NAMES
 
-
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
 # https://superset.apache.org/docs/databases/installing-database-drivers
 # https://preset.io/blog/building-database-connector/
