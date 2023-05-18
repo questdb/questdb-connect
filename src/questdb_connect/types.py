@@ -252,8 +252,6 @@ def resolve_type_from_name(type_name):
 
 class QDBTypeCompiler(GenericTypeCompiler):
     ensure_kwarg = None
-    def visit_BOOLEAN(self, type_, **kw):
-        return Boolean.__visit_name__
 
     def visit_GEOHASHINT(self, type_, **kw):
         return GeohashInt.__visit_name__
@@ -292,9 +290,6 @@ class QDBTypeCompiler(GenericTypeCompiler):
             UnsupportedCompilationError(self, element),
             replace_context=err,
         )
-
-    def visit_BOOLEAN(self, type_, **kw):
-        return Boolean.__visit_name__
 
     def visit_BOOLEAN(self, type_, **kw):
         return Boolean.__visit_name__

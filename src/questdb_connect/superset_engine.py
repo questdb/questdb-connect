@@ -44,8 +44,8 @@ from . import remove_public_schema, types
 from .dialect import connection_uri
 from .function_names import FUNCTION_NAMES
 
-# https://superset.apache.org/docs/databases/installing-database-drivers
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
+# https://superset.apache.org/docs/databases/installing-database-drivers
 # https://preset.io/blog/building-database-connector/
 # https://preset.io/blog/improving-apache-superset-integration-database-sqlalchemy/
 
@@ -131,7 +131,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def get_default_schema_for_query(cls, database, query) -> Optional[str]:
-        return ['public']
+        return 'public'
 
     @classmethod
     def get_allow_cost_estimate(cls, extra: Dict[str, Any]) -> bool:
@@ -284,3 +284,33 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :return: A list of function names usable in the database
         """
         return FUNCTION_NAMES
+
+    @classmethod
+    def get_column_spec(
+            cls,
+            native_type: Optional[str],
+            db_extra: Optional[Dict[str, Any]] = None,
+            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
+    ) -> Optional[utils.ColumnSpec]:
+        """Get generic type related specs regarding a native column type.
+        :param native_type: Native database type
+        :param db_extra: The database extra object
+        :param source: Type coming from the database table or cursor description
+        :return: ColumnSpec object
+        """
+        if not native_type:
+            return None
+        sqla_type = types.resolve_type_from_name(native_type)
+        name_u = sqla_type.__visit_name__
+        generic_type = None
+        if name_u == 'BOOLEAN':
+            generic_type = GenericDataType.BOOLEAN
+        elif name_u in ('BYTE', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE'):
+            generic_type = GenericDataType.NUMERIC
+        elif name_u in ('SYMBOL', 'STRING', 'CHAR', 'LONG256', 'UUID'):
+            generic_type = GenericDataType.STRING
+        elif name_u in ('DATE', 'TIMESTAMP'):
+            generic_type = GenericDataType.TEMPORAL
+        elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
+            generic_type = GenericDataType.STRING
+        return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)
