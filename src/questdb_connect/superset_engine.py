@@ -227,8 +227,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param source: Type coming from the database table or cursor description
         :return: ColumnSpec object
         """
-        if not native_type:
-            return None
         return types.resolve_type_from_name(native_type).impl
 
     @classmethod
@@ -240,8 +238,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param dialect: Sqlalchemy dialect
         :return: Compiled column type
         """
-        sqla_column_type = sqla_column_type.copy()
-        return sqla_column_type.compile(dialect=dialect).upper()
+        return sqla_column_type.copy().compile(dialect=dialect)
 
     @classmethod
     def select_star(
@@ -292,11 +289,8 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param source: Type coming from the database table or cursor description
         :return: ColumnSpec object
         """
-        if not native_type:
-            return None
         sqla_type = types.resolve_type_from_name(native_type)
-        name_u = sqla_type.__visit_name__
-        generic_type = cls._column_type_to_generic_type_mapping.get(name_u)
-        if not generic_type and 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
+        generic_type = cls._column_type_to_generic_type_mapping.get(native_type)
+        if not generic_type and 'GEOHASH' in native_type and '(' in native_type and ')' in native_type:
             generic_type = GenericDataType.STRING
         return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)

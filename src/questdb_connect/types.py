@@ -20,18 +20,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-from __future__ import annotations
-
 import enum
 
 import sqlalchemy as sqla
-from sqlalchemy.exc import (
-    ArgumentError,
-    CompileError,
-    UnsupportedCompilationError,
-)
-from sqlalchemy.sql.compiler import GenericTypeCompiler
-from sqlalchemy.util import raise_
+from sqlalchemy.exc import ArgumentError
 
 # ===== QUESTDB PARTITION TYPE =====
 
@@ -105,8 +97,8 @@ class QDBTypeMixin(sqla.types.TypeDecorator):
     def column_spec(self, column_name):
         return f"{quote_identifier(column_name)} {self.__visit_name__}"
 
-    def _compiler_dispatch(cls, _visitor, **_kw) -> str:
-        return cls.__visit_name__
+    def compile(self, dialect=None):
+        return self.__visit_name__
 
 
 class Boolean(QDBTypeMixin):
@@ -231,6 +223,8 @@ QUESTDB_TYPES = [
 
 
 def resolve_type_from_name(type_name):
+    if not type_name:
+        return None
     type_class = _TYPE_CACHE.get(type_name)
     if not type_class:
         for candidate_class in QUESTDB_TYPES:
@@ -250,147 +244,3 @@ def resolve_type_from_name(type_name):
     if not type_class:
         raise ArgumentError(f'unsupported type: {type_name}')
     return type_class
-
-
-class QDBTypeCompiler(GenericTypeCompiler):
-    ensure_kwarg = None
-
-    def visit_BOOLEAN(self, type_, **kw):
-        return Boolean.__visit_name__
-
-    def visit_boolean(self, type_, **kw):
-        return Boolean.__visit_name__
-
-    def visit_BOOL(self, type_, **kw):
-        return Boolean.__visit_name__
-
-    def visit_bool(self, type_, **kw):
-        return Boolean.__visit_name__
-
-    def visit_BYTE(self, type_, **kw):
-        return Byte.__visit_name__
-
-    def visit_byte(self, type_, **kw):
-        return Byte.__visit_name__
-
-    def visit_SHORT(self, type_, **kw):
-        return Short.__visit_name__
-
-    def visit_short(self, type_, **kw):
-        return Short.__visit_name__
-
-    def visit_CHAR(self, type_, **kw):
-        return Char.__visit_name__
-
-    def visit_char(self, type_, **kw):
-        return Char.__visit_name__
-
-    def visit_INT(self, type_, **kw):
-        return Int.__visit_name__
-
-    def visit_int(self, type_, **kw):
-        return Int.__visit_name__
-
-    def visit_INTEGER(self, type_, **kw):
-        return Int.__visit_name__
-
-    def visit_integer(self, type_, **kw):
-        return Int.__visit_name__
-
-    def visit_LONG(self, type_, **kw):
-        return Long.__visit_name__
-
-    def visit_long(self, type_, **kw):
-        return Long.__visit_name__
-
-    def visit_FLOAT(self, type_, **kw):
-        return Float.__visit_name__
-
-    def visit_float(self, type_, **kw):
-        return Float.__visit_name__
-
-    def visit_TIMESTAMP(self, type_, **kw):
-        return Timestamp.__visit_name__
-
-    def visit_timestamp(self, type_, **kw):
-        return Timestamp.__visit_name__
-
-    def visit_DATE(self, type_, **kw):
-        return Date.__visit_name__
-
-    def visit_date(self, type_, **kw):
-        return Date.__visit_name__
-
-    def visit_UUID(self, type_, **kw):
-        return UUID.__visit_name__
-
-    def visit_uuid(self, type_, **kw):
-        return UUID.__visit_name__
-
-    def visit_LONG256(self, type_, **kw):
-        return Long256.__visit_name__
-
-    def visit_long256(self, type_, **kw):
-        return Long256.__visit_name__
-
-    def visit_DOUBLE(self, type_, **kw):
-        return Double.__visit_name__
-
-    def visit_double(self, type_, **kw):
-        return Double.__visit_name__
-
-    def visit_STRING(self, type_, **kw):
-        return String.__visit_name__
-
-    def visit_string(self, type_, **kw):
-        return String.__visit_name__
-
-    def visit_SYMBOL(self, type_, **kw):
-        return Symbol.__visit_name__
-
-    def visit_symbol(self, type_, **kw):
-        return Symbol.__visit_name__
-
-    def _render_string_type(self, type_, name):
-        return name
-
-    def visit_GEOHASHINT(self, type_, **kw):
-        return GeohashInt.__visit_name__
-
-    def visit_GeohashInt(self, type_, **kw):
-        return GeohashInt.__visit_name__
-
-    def visit_GEOHASHLONG(self, type_, **kw):
-        return GeohashLong.__visit_name__
-
-    def visit_GeohashLong(self, type_, **kw):
-        return GeohashLong.__visit_name__
-
-    def visit_GEOHASHBYTE(self, type_, **kw):
-        return GeohashByte.__visit_name__
-
-    def visit_GeohashByte(self, type_, **kw):
-        return GeohashByte.__visit_name__
-
-    def visit_GEOHASHSHORT(self, type_, **kw):
-        return GeohashShort.__visit_name__
-
-    def visit_GeohashShort(self, type_, **kw):
-        return GeohashShort.__visit_name__
-
-    def visit_unsupported_compilation(self, element, err, **kw):
-        if isinstance(element, GeohashLong):
-            return GeohashLong.__visit_name__
-        if isinstance(element, GeohashInt):
-            return GeohashInt.__visit_name__
-        if isinstance(element, GeohashShort):
-            return GeohashShort.__visit_name__
-        if isinstance(element, GeohashByte):
-            return GeohashByte.__visit_name__
-        raise_(
-            UnsupportedCompilationError(self, element),
-            replace_context=err,
-        )
-
-    def visit_null(self, type_, **kw):
-        raise CompileError(f'cannot generate DDL for type: {type_}')

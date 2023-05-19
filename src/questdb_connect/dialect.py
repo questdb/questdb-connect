@@ -31,6 +31,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.sql.compiler import (
     DDLCompiler,
+    GenericTypeCompiler,
     IdentifierPreparer,
     SQLCompiler,
 )
@@ -254,7 +255,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     default_schema_name = 'public'
     statement_compiler = QDBSQLCompiler
     ddl_compiler = QDBDDLCompiler
-    type_compiler = QDBTypeCompiler
+    type_compiler = GenericTypeCompiler
     inspector = QDBInspector
     preparer = QDBIdentifierPreparer
     supports_schemas = False
