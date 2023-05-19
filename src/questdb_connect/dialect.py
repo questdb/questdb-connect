@@ -285,14 +285,14 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
         return [row.table for row in connection.execute(text('SHOW TABLES'))]
 
     def has_table(self, connection, table_name, schema=None):
-        query = f"tables() WHERE name='{table_name}'"
-        result = connection.execute(text(query))
-        return result.rowcount == 1
+        return connection.execute(text(f"tables() WHERE name='{table_name}'")).rowcount == 1
 
     @cache
     def get_columns(self, connection, table_name, schema=None, **kw):
-        result_set = connection.execute(text(f"table_columns('{table_name}')"))
-        return self.inspector.format_table_columns(table_name, result_set)
+        return self.inspector.format_table_columns(
+            table_name,
+            connection.execute(text(f"table_columns('{table_name}')"))
+        )
 
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
         return []
