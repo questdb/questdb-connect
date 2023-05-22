@@ -271,6 +271,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     non_native_boolean_check_constraint = False
     max_identifier_length = 255
     _user_defined_max_identifier_length = 255
+    _has_native_hstore = False
     supports_is_distinct_from = False
 
     @classmethod

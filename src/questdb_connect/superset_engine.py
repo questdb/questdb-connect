@@ -63,9 +63,9 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     engine_name = 'QuestDB Connect'
     default_driver = "psycopg2"
     encryption_parameters = {"sslmode": "prefer"}
-    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/dbname"
+    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/database"
     parameters_schema = QDBParametersSchema()
-    time_groupby_inline = True
+    time_groupby_inline = False
     allows_hidden_cc_in_orderby = True
     time_secondary_columns = True
     try_remove_schema_from_table_name = True
