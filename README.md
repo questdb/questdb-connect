@@ -1,19 +1,37 @@
+<a href="https://questdb.io/docs/" target="blank">
+    <img alt="QuestDB Logo" src="https://questdb.io/img/questdb-logo-themed.svg" width="305px"/> Connect
+</a>
+<p></p>
+<a href="https://slack.questdb.io">
+    <img src="https://slack.questdb.io/badge.svg" alt="QuestDB community Slack channel"/>
+</a>
+
+|PyPI| |Python|
+
+.. |PyPI| image:: https://img.shields.io/pypi/v/sqlalchemy
+:target: https://pypi.org/project/questdb-connect/
+:alt: PyPI
+
+.. |Python| image:: https://img.shields.io/pypi/pyversions/sqlalchemy
+:target: https://pypi.org/project/questdb-connect/
+:alt: PyPI - Python Version
+
 ## QuestDB Connect
 
-This module offers an implementation of QuestDB's dialect for [SQLAlchemy](https://www.sqlalchemy.org/), 
-as well as an engine specification for [Apache Superset](https://github.com/apache/superset/), using 
+This module offers an implementation of QuestDB's dialect for [SQLAlchemy](https://www.sqlalchemy.org/),
+as well as an engine specification for [Apache Superset](https://github.com/apache/superset/), using
 [psycopg2](https://www.psycopg.org/) for database connectivity.
 
-Psycopg2 is a widely used and trusted Python module for connecting to and working with PostgreSQL databases. 
+Psycopg2 is a widely used and trusted Python module for connecting to and working with PostgreSQL databases.
 It provides a comprehensive set of features for interacting with the PostgreSQL database system.
 
-SQLAlchemy is an open-source SQL toolkit and ORM library for Python. It provides a high-level API for 
-communicating with relational databases, including schema creation and modification, an SQL expression 
-language, and database connection management. The ORM layer abstracts away the complexities of the 
+SQLAlchemy is an open-source SQL toolkit and ORM library for Python. It provides a high-level API for
+communicating with relational databases, including schema creation and modification, an SQL expression
+language, and database connection management. The ORM layer abstracts away the complexities of the
 database, allowing developers to work with Python objects instead of raw SQL statements.
 
-Apache Superset is a popular open-source business intelligence web application that enables users to 
-visualize and explore data through customizable dashboards and reports. It provides a rich set of data 
+Apache Superset is a popular open-source business intelligence web application that enables users to
+visualize and explore data through customizable dashboards and reports. It provides a rich set of data
 visualizations, including charts, tables, and maps.
 
 ## Requirements
@@ -30,9 +48,9 @@ You can install this package using pip:
 pip install questdb-connect
 ```
 
-## Sample Usage
+## SQLALchemy Sample Usage
 
-Use the QuestDB dialect by specifying it in your SQLAlchemy connection string, 
+Use the QuestDB dialect by specifying it in your SQLAlchemy connection string,
 from that point on use SQLAlchemy:
 
 ```python
@@ -50,7 +68,7 @@ Base = declarative_base(metadata=MetaData())
 
 class Signal(Base):
     __tablename__ = 'signal'
-    __table_args__ = (qdbc.QDBTableEngine('signal', 'ts', qdbc.PartitionBy.HOUR, is_wal=True), )
+    __table_args__ = (qdbc.QDBTableEngine('signal', 'ts', qdbc.PartitionBy.HOUR, is_wal=True),)
     source = Column(qdbc.Symbol)
     value = Column(qdbc.Double)
     ts = Column(qdbc.Timestamp, primary_key=True)
@@ -74,6 +92,13 @@ def main():
 if __name__ == '__main__':
     main()
 ```
+
+## Superset Installation
+
+<img alt="QuestDB Logo" src="docs/superset.png"/>
+
+Follow the instructions available here
+[https://superset.apache.org/docs/installation/installing-superset-from-scratch/](https://superset.apache.org/docs/installation/installing-superset-from-scratch/).
 
 ## Contributing
 
