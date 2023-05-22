@@ -228,9 +228,9 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param source: Type coming from the database table or cursor description
         :return: ColumnSpec object
         """
-        if not native_type:
-            return None
         sqla_type = types.resolve_type_from_name(native_type)
+        if not sqla_type:
+            return BaseEngineSpec.get_column_spec(native_type, db_extra, source)
         name_u = sqla_type.__visit_name__
         generic_type = None
         if name_u == 'BOOLEAN':

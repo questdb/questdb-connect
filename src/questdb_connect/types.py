@@ -241,6 +241,4 @@ def resolve_type_from_name(type_name):
                     g_size *= 5
                 type_class = geohash_class(g_size)
                 break
-    if not type_class:
-        raise ArgumentError(f'unsupported type: {type_name}')
     return type_class
