@@ -40,9 +40,10 @@ from superset.db_engine_specs.base import (
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
-from . import remove_public_schema, types
-from .dialect import connection_uri
-from .function_names import FUNCTION_NAMES
+from questdb_connect import remove_public_schema, types as questdb_types
+from questdb_connect.dialect import connection_uri
+from questdb_connect.function_names import FUNCTION_NAMES
+
 
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
 # https://superset.apache.org/docs/databases/installing-database-drivers
@@ -98,24 +99,23 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             name = builtin_time_grains[duration]
             ret_list.append(TimeGrain(name, _(name), func, duration))
     _engine_time_grains = tuple(ret_list)
-    _default_column_type_mappings = (
-        (re.compile("^LONG256", re.IGNORECASE), types.Long256, GenericDataType.STRING),
-        (re.compile("^BOOLEAN", re.IGNORECASE), types.Boolean, GenericDataType.BOOLEAN),
-        (re.compile("^BYTE", re.IGNORECASE), types.Byte, GenericDataType.BOOLEAN),
-        (re.compile("^SHORT", re.IGNORECASE), types.Short, GenericDataType.NUMERIC),
-        (re.compile("^INT", re.IGNORECASE), types.Int, GenericDataType.NUMERIC),
-        (re.compile("^LONG", re.IGNORECASE), types.Long, GenericDataType.NUMERIC),
-        (re.compile("^FLOAT", re.IGNORECASE), types.Float, GenericDataType.NUMERIC),
-        (re.compile("^DOUBLE'", re.IGNORECASE), types.Double, GenericDataType.NUMERIC),
-        (re.compile("^SYMBOL", re.IGNORECASE), types.Symbol, GenericDataType.STRING),
-        (re.compile("^STRING", re.IGNORECASE), types.String, GenericDataType.STRING),
-        (re.compile("^UUID", re.IGNORECASE), types.UUID, GenericDataType.STRING),
-        (re.compile("^CHAR", re.IGNORECASE), types.Char, GenericDataType.STRING),
-        (re.compile("^TIMESTAMP", re.IGNORECASE), types.Timestamp, GenericDataType.TEMPORAL),
-        (re.compile("^DATE", re.IGNORECASE), types.Date, GenericDataType.TEMPORAL),
-        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), types.GeohashLong, GenericDataType.STRING)
+    column_type_mappings = (
+        (re.compile("^LONG256", re.IGNORECASE), questdb_types.Long256, GenericDataType.STRING),
+        (re.compile("^BOOLEAN", re.IGNORECASE), questdb_types.Boolean, GenericDataType.BOOLEAN),
+        (re.compile("^BYTE", re.IGNORECASE), questdb_types.Byte, GenericDataType.BOOLEAN),
+        (re.compile("^SHORT", re.IGNORECASE), questdb_types.Short, GenericDataType.NUMERIC),
+        (re.compile("^INT", re.IGNORECASE), questdb_types.Int, GenericDataType.NUMERIC),
+        (re.compile("^LONG", re.IGNORECASE), questdb_types.Long, GenericDataType.NUMERIC),
+        (re.compile("^FLOAT", re.IGNORECASE), questdb_types.Float, GenericDataType.NUMERIC),
+        (re.compile("^DOUBLE'", re.IGNORECASE), questdb_types.Double, GenericDataType.NUMERIC),
+        (re.compile("^SYMBOL", re.IGNORECASE), questdb_types.Symbol, GenericDataType.STRING),
+        (re.compile("^STRING", re.IGNORECASE), questdb_types.String, GenericDataType.STRING),
+        (re.compile("^UUID", re.IGNORECASE), questdb_types.UUID, GenericDataType.STRING),
+        (re.compile("^CHAR", re.IGNORECASE), questdb_types.Char, GenericDataType.STRING),
+        (re.compile("^TIMESTAMP", re.IGNORECASE), questdb_types.Timestamp, GenericDataType.TEMPORAL),
+        (re.compile("^DATE", re.IGNORECASE), questdb_types.Date, GenericDataType.TEMPORAL),
+        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), questdb_types.GeohashLong, GenericDataType.STRING)
     )
-    column_type_mappings = _default_column_type_mappings
 
     @classmethod
     def build_sqlalchemy_uri(
@@ -143,15 +143,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         if cls.allows_escaped_colons:
             clause = clause.replace(":", "\\:")
         return text(remove_public_schema(clause))
-
-    @classmethod
-    def get_time_grain_expressions(cls) -> Dict[Optional[str], str]:
-        """Return a dict of all supported time grains including any
-        potential added grains but excluding any potentially disabled
-        grains in the config file.
-        :return: All time grain expressions supported by the engine
-        """
-        return cls._time_grain_expressions
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
@@ -186,36 +177,6 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return type_code.upper() if type_code and isinstance(type_code, str) else str(type_code)
 
     @classmethod
-    def get_time_grains(cls) -> Tuple[TimeGrain, ...]:
-        """Generate a tuple of supported time grains.
-        :return: All time grains supported by the engine
-        """
-        return cls._engine_time_grains
-
-    @classmethod
-    def get_column_types(
-            cls,
-            column_type: Optional[str],
-    ) -> Optional[Tuple[TypeEngine, GenericDataType]]:
-        """Return a sqlalchemy native column type and generic data type that
-        corresponds to the column type defined in the data source (return None
-        to use default type inferred by SQLAlchemy). Override `column_type_mappings`
-        for specific needs (see MSSQL for example of NCHAR/NVARCHAR handling).
-        :param column_type: Column type returned by inspector
-        :return: SQLAlchemy and generic Superset column types
-        """
-        if not column_type:
-            return None
-        for regex, sqla_type, generic_type in cls._default_column_type_mappings:
-            matching_name = regex.search(column_type)
-            if matching_name:
-                return (
-                    types.resolve_type_from_name(sqla_type.__visit_name__).impl,
-                    generic_type
-                )
-        return None
-
-    @classmethod
     def get_column_spec(
             cls,
             native_type: Optional[str],
@@ -228,7 +189,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param source: Type coming from the database table or cursor description
         :return: ColumnSpec object
         """
-        sqla_type = types.resolve_type_from_name(native_type)
+        sqla_type = questdb_types.resolve_type_from_name(native_type)
         if not sqla_type:
             return BaseEngineSpec.get_column_spec(native_type, db_extra, source)
         name_u = sqla_type.__visit_name__
@@ -258,7 +219,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param source: Type coming from the database table or cursor description
         :return: ColumnSpec object
         """
-        return types.resolve_type_from_name(native_type).impl
+        return questdb_types.resolve_type_from_name(native_type).impl
 
     @classmethod
     def column_datatype_to_string(cls, sqla_column_type: TypeEngine, dialect: Dialect) -> str:

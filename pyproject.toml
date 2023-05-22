@@ -23,7 +23,7 @@
 # https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
 [project]
 name = 'questdb-connect'
-version = '1.0.0'
+version = '0.0.90'
 authors = [{ name = 'questdb.io', email = 'miguel@questdb.io' }]
 description = "SqlAlchemy/Superset libraries."
 readme = "README.md"
@@ -46,7 +46,7 @@ dependencies = []
 questdb = 'questdb_connect.dialect:QuestDBDialect'
 
 [project.entry-points.'superset.db_engine_specs']
-questdb = 'questdb_connect.superset_engine:QDBEngineSpec'
+questdb = 'superset_ext.db_engine_specs.questdb:QDBEngineSpec'
 
 [project.optional-dependencies]
 test = [

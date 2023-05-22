@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
 ## Superset Installation
 
-<img alt="QuestDB Logo" src="docs/superset.png"/>
+<img alt="QuestDB Logo" src="https://github.com/questdb/questdb-connect/blob/main/docs/superset.png"/>
 
 Follow the instructions available here
 [https://superset.apache.org/docs/installation/installing-superset-from-scratch/](https://superset.apache.org/docs/installation/installing-superset-from-scratch/).

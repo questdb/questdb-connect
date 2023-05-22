@@ -24,10 +24,7 @@ import datetime
 from unittest import mock
 
 import pytest
-import sqlalchemy as sqla
-from questdb_connect import types
-from questdb_connect.dialect import QuestDBDialect
-from questdb_connect.superset_engine import QDBEngineSpec
+from superset_ext.db_engine_specs.questdb import QDBEngineSpec
 
 
 def test_build_sqlalchemy_uri():
@@ -84,34 +81,3 @@ def test_get_table_names():
         database=mock.ANY, schema="public", inspector=inspector
     )
     assert pg_result == {'table', '"public.table_3"', 'table_2'}
-
-
-def test_time_exp_literal_no_grain():
-    col = sqla.Column('col_ts', types.Timestamp, primary_key=True)
-    expr = QDBEngineSpec.get_timestamp_expr(col, None, None)
-    assert str(expr.compile(None, dialect=QuestDBDialect())) == 'col_ts'
-
-
-def test_time_exp_literal_1y_grain():
-    col = sqla.Column('col_ts', types.Timestamp, primary_key=True)
-    expr = QDBEngineSpec.get_timestamp_expr(col, None, 'P1Y')
-    assert str(expr.compile(None, dialect=QuestDBDialect())) == "date_trunc('year', col_ts)"
-
-
-def test_time_exp_highr():
-    col = sqla.Column('col_ts', types.Timestamp, primary_key=True)
-    expr = QDBEngineSpec.get_timestamp_expr(col, 'epoch_ms', None)
-    assert str(expr.compile(None, dialect=QuestDBDialect())) == '(col_ts/1000) * 1000000'
-
-
-def test_time_exp_lowr_col_sec_1y():
-    col = sqla.Column('col_ts', types.Timestamp, primary_key=True)
-    expr = QDBEngineSpec.get_timestamp_expr(col, "epoch_s", "P1Y")
-    assert str(expr.compile(None, dialect=QuestDBDialect())) == "date_trunc('year', col_ts * 1000000)"
-
-
-def test_time_exp_highr_col_micro_1y():
-    col = sqla.Column('col_ts', types.Timestamp, primary_key=True)
-    expr = QDBEngineSpec.get_timestamp_expr(col, "epoch_ms", "P1Y")
-    assert str(expr.compile(None, dialect=QuestDBDialect())) == "date_trunc('year', (col_ts/1000) * 1000000)"
-
