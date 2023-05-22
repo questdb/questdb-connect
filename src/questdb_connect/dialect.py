@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
 
 
-def connection_uri(host: str, port: int, username: str, password: str, database: str = 'main'):
+def connection_uri(host: str, port: str, username: str, password: str, database: str = 'main'):
     return f'questdb://{username}:{password}@{host}:{port}/{database}'
 
 

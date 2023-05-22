@@ -168,7 +168,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     ) -> str:
         return connection_uri(
             parameters.get("host"),
-            int(parameters.get("port")),
+            parameters.get("port"),
             parameters.get("username"),
             parameters.get("password"),
             parameters.get("database"))
