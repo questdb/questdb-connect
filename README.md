@@ -18,6 +18,7 @@ The Python module is available here:
     <img src="https://pypi.org/static/images/logo-small.2a411bc6.svg" alt="PyPi"/>
     https://pypi.org/project/questdb-connect/
 </a>
+<p></p>
 
 _Psycopg2_ is a widely used and trusted Python module for connecting to and working with PostgreSQL databases.
 It provides a comprehensive set of features for interacting with the PostgreSQL database system.
