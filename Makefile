@@ -62,5 +62,7 @@ test:
 	python3 -m ruff check src/questdb_connect --fix
 	python3 -m ruff check src/examples --fix
 	python3 -m ruff check tests --fix
+	python3 -m isort src/superset_ext
+	python3 -m black src/superset_ext
 
 -include ../Mk/phonies

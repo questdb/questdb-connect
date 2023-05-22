@@ -30,7 +30,7 @@ from superset_ext.db_engine_specs.questdb import QDBEngineSpec
 def test_build_sqlalchemy_uri():
     request_uri = QDBEngineSpec.build_sqlalchemy_uri({
         'host': 'localhost',
-        'port': 8812,
+        'port': '8812',
         'username': 'admin',
         'password': 'quest',
         'database': 'main',
@@ -48,12 +48,12 @@ def test_build_sqlalchemy_uri():
         ),
         (
                 "DateTime",
-                "TO_TIMESTAMP('2023-04-28 23:55:59.281567', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')",
+                "TO_TIMESTAMP('2023-04-28T23:55:59.281567', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')",
                 datetime.datetime(2023, 4, 28, 23, 55, 59, 281567)
         ),
         (
                 "TimeStamp",
-                "TO_TIMESTAMP('2023-04-28 23:55:59.281567', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')",
+                "TO_TIMESTAMP('2023-04-28T23:55:59.281567', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')",
                 datetime.datetime(2023, 4, 28, 23, 55, 59, 281567)
         ),
         ("UnknownType", None, datetime.datetime(2023, 4, 28, 23, 55, 59, 281567)),

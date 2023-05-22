@@ -37,10 +37,10 @@ from superset.db_engine_specs.base import (
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
-from questdb_connect import remove_public_schema, types as questdb_types
+from questdb_connect import remove_public_schema
+from questdb_connect import types as questdb_types
 from questdb_connect.dialect import connection_uri
 from questdb_connect.function_names import FUNCTION_NAMES
-
 
 # Apache Superset requires a Python DB-API database driver, and a SQLAlchemy dialect
 # https://superset.apache.org/docs/databases/installing-database-drivers
@@ -49,16 +49,16 @@ from questdb_connect.function_names import FUNCTION_NAMES
 
 
 class QDBParametersSchema(Schema):
-    username = fields.String(allow_none=True, description=__('user'))
-    password = fields.String(allow_none=True, description=__('password'))
-    host = fields.String(required=True, description=__('host'))
-    port = fields.Integer(allow_none=True, description=__('port'))
-    database = fields.String(allow_none=True, description=__('database'))
+    username = fields.String(allow_none=True, description=__("user"))
+    password = fields.String(allow_none=True, description=__("password"))
+    host = fields.String(required=True, description=__("host"))
+    port = fields.Integer(allow_none=True, description=__("port"))
+    database = fields.String(allow_none=True, description=__("database"))
 
 
 class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
-    engine = 'questdb'
-    engine_name = 'QuestDB Connect'
+    engine = "questdb"
+    engine_name = "QuestDB Connect"
     default_driver = "psycopg2"
     encryption_parameters = {"sslmode": "prefer"}
     sqlalchemy_uri_placeholder = "questdb://user:password@host:port/database"
@@ -73,7 +73,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
     # https://en.wikipedia.org/wiki/ISO_8601#Durations
     # https://questdb.io/docs/reference/function/date-time/#date_trunc
     _time_grain_expressions = {
-        None: '{col}',
+        None: "{col}",
         "PT1S": "date_trunc('second', {col})",
         "PT1M": "date_trunc('minute', {col})",
         "PT1H": "date_trunc('hour', {col})",
@@ -87,95 +87,93 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         (
             re.compile("^LONG256", re.IGNORECASE),
             questdb_types.Long256,
-            GenericDataType.STRING
+            GenericDataType.STRING,
         ),
         (
             re.compile("^BOOLEAN", re.IGNORECASE),
             questdb_types.Boolean,
-            GenericDataType.BOOLEAN
+            GenericDataType.BOOLEAN,
         ),
         (
             re.compile("^BYTE", re.IGNORECASE),
             questdb_types.Byte,
-            GenericDataType.NUMERIC),
+            GenericDataType.NUMERIC,
+        ),
         (
             re.compile("^SHORT", re.IGNORECASE),
             questdb_types.Short,
-            GenericDataType.NUMERIC
+            GenericDataType.NUMERIC,
         ),
-        (
-            re.compile("^INT", re.IGNORECASE),
-            questdb_types.Int,
-            GenericDataType.NUMERIC
-        ),
+        (re.compile("^INT", re.IGNORECASE), questdb_types.Int, GenericDataType.NUMERIC),
         (
             re.compile("^LONG", re.IGNORECASE),
             questdb_types.Long,
-            GenericDataType.NUMERIC
+            GenericDataType.NUMERIC,
         ),
         (
             re.compile("^FLOAT", re.IGNORECASE),
             questdb_types.Float,
-            GenericDataType.NUMERIC
+            GenericDataType.NUMERIC,
         ),
         (
             re.compile("^DOUBLE'", re.IGNORECASE),
             questdb_types.Double,
-            GenericDataType.NUMERIC
+            GenericDataType.NUMERIC,
         ),
         (
             re.compile("^SYMBOL", re.IGNORECASE),
             questdb_types.Symbol,
-            GenericDataType.STRING
+            GenericDataType.STRING,
         ),
         (
             re.compile("^STRING", re.IGNORECASE),
             questdb_types.String,
-            GenericDataType.STRING
+            GenericDataType.STRING,
         ),
         (
             re.compile("^UUID", re.IGNORECASE),
             questdb_types.UUID,
-            GenericDataType.STRING
+            GenericDataType.STRING,
         ),
         (
             re.compile("^CHAR", re.IGNORECASE),
             questdb_types.Char,
-            GenericDataType.STRING
+            GenericDataType.STRING,
         ),
         (
             re.compile("^TIMESTAMP", re.IGNORECASE),
             questdb_types.Timestamp,
-            GenericDataType.TEMPORAL
+            GenericDataType.TEMPORAL,
         ),
         (
             re.compile("^DATE", re.IGNORECASE),
             questdb_types.Date,
-            GenericDataType.TEMPORAL
+            GenericDataType.TEMPORAL,
         ),
         (
             re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE),
             questdb_types.GeohashLong,
-            GenericDataType.STRING
-        )
+            GenericDataType.STRING,
+        ),
     )
 
     @classmethod
     def build_sqlalchemy_uri(
-            cls,
-            parameters: BasicParametersType,
-            encrypted_extra: Optional[Dict[str, str]] = None
+        cls,
+        parameters: BasicParametersType,
+        encrypted_extra: Optional[Dict[str, str]] = None,
     ) -> str:
         return connection_uri(
             parameters.get("host"),
             parameters.get("port"),
             parameters.get("username"),
             parameters.get("password"),
-            parameters.get("database"))
+            parameters.get("database"),
+        )
 
     @classmethod
     def get_default_schema_for_query(cls, database, query) -> Optional[str]:
-        return 'public'
+        return "public"
 
     @classmethod
     def get_text_clause(cls, clause):
@@ -194,15 +192,11 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         expression, e.g. "FROM_UNIXTIME({col})"
         :return: SQL Expression
         """
-        return '{col} * 1000000'
+        return "{col} * 1000000"
 
     @classmethod
     def convert_dttm(
-            cls,
-            target_type: str,
-            dttm: datetime,
-            *_args,
-            **_kwargs
+        cls, target_type: str, dttm: datetime, *_args, **_kwargs
     ) -> Optional[str]:
         """Convert a Python `datetime` object to a SQL expression.
         :param target_type: The target type of expression
@@ -210,10 +204,10 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :return: The SQL expression
         """
         type_u = target_type.upper()
-        if type_u == 'DATE':
+        if type_u == "DATE":
             return f"TO_DATE('{dttm.date().isoformat()}', 'YYYY-MM-DD')"
-        if type_u in ('DATETIME', 'TIMESTAMP'):
-            dttm_formatted = dttm.isoformat(sep=" ", timespec="microseconds")
+        if type_u in ("DATETIME", "TIMESTAMP"):
+            dttm_formatted = dttm.isoformat(sep="T", timespec="microseconds")
             return f"TO_TIMESTAMP('{dttm_formatted}', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')"
         return None
 
@@ -229,10 +223,10 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def get_column_spec(
-            cls,
-            native_type: Optional[str],
-            db_extra: Optional[Dict[str, Any]] = None,
-            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
+        cls,
+        native_type: Optional[str],
+        db_extra: Optional[Dict[str, Any]] = None,
+        source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
     ) -> Optional[utils.ColumnSpec]:
         """Get generic type related specs regarding a native column type.
         :param native_type: Native database type
@@ -245,28 +239,26 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             return BaseEngineSpec.get_column_spec(native_type, db_extra, source)
         name_u = sqla_type.__visit_name__
         generic_type = None
-        if name_u == 'BOOLEAN':
+        if name_u == "BOOLEAN":
             generic_type = GenericDataType.BOOLEAN
-        elif name_u in ('BYTE', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE'):
+        elif name_u in ("BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE"):
             generic_type = GenericDataType.NUMERIC
-        elif name_u in ('SYMBOL', 'STRING', 'CHAR', 'LONG256', 'UUID'):
+        elif name_u in ("SYMBOL", "STRING", "CHAR", "LONG256", "UUID"):
             generic_type = GenericDataType.STRING
-        elif name_u in ('DATE', 'TIMESTAMP'):
+        elif name_u in ("DATE", "TIMESTAMP"):
             generic_type = GenericDataType.TEMPORAL
-        elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
+        elif "GEOHASH" in name_u and "(" in name_u and ")" in name_u:
             generic_type = GenericDataType.STRING
         return utils.ColumnSpec(
-            sqla_type,
-            generic_type,
-            generic_type == GenericDataType.TEMPORAL
+            sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL
         )
 
     @classmethod
     def get_sqla_column_type(
-            cls,
-            native_type: Optional[str],
-            db_extra: Optional[Dict[str, Any]] = None,
-            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
+        cls,
+        native_type: Optional[str],
+        db_extra: Optional[Dict[str, Any]] = None,
+        source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
     ) -> Optional[TypeEngine]:
         """Converts native database type to sqlalchemy column type.
         :param native_type: Native database type
@@ -278,9 +270,9 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def column_datatype_to_string(
-            cls,
-            sqla_column_type: TypeEngine,
-            dialect: Dialect,
+        cls,
+        sqla_column_type: TypeEngine,
+        dialect: Dialect,
     ) -> str:
         """Convert sqlalchemy column type to string representation.
         By default, removes collation and character encoding info to avoid
@@ -293,16 +285,16 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def select_star(
-            cls,
-            database,
-            table_name: str,
-            engine,
-            schema: Optional[str] = None,
-            limit: int = 100,
-            show_cols: bool = False,
-            indent: bool = True,
-            latest_partition: bool = True,
-            cols: Optional[List[Dict[str, Any]]] = None,
+        cls,
+        database,
+        table_name: str,
+        engine,
+        schema: Optional[str] = None,
+        limit: int = 100,
+        show_cols: bool = False,
+        indent: bool = True,
+        latest_partition: bool = True,
+        cols: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         """Generate a "SELECT * from table_name" query with appropriate limit.
         :param database: Database instance
@@ -325,7 +317,7 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             show_cols,
             indent,
             latest_partition,
-            cols
+            cols,
         )
 
     @classmethod
