@@ -22,10 +22,9 @@
 #
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from flask_babel import gettext as __
-from flask_babel import lazy_gettext as _
 from marshmallow import Schema, fields
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.sql import text
@@ -34,8 +33,6 @@ from superset.db_engine_specs.base import (
     BaseEngineSpec,
     BasicParametersMixin,
     BasicParametersType,
-    TimeGrain,
-    builtin_time_grains,
 )
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
@@ -93,28 +90,81 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         "P1Y": "date_trunc('year', {col})",
         "P3M": "date_trunc('quarter', {col})",
     }
-    ret_list = []
-    for duration, func in _time_grain_expressions.items():
-        if duration:
-            name = builtin_time_grains[duration]
-            ret_list.append(TimeGrain(name, _(name), func, duration))
-    _engine_time_grains = tuple(ret_list)
     column_type_mappings = (
-        (re.compile("^LONG256", re.IGNORECASE), questdb_types.Long256, GenericDataType.STRING),
-        (re.compile("^BOOLEAN", re.IGNORECASE), questdb_types.Boolean, GenericDataType.BOOLEAN),
-        (re.compile("^BYTE", re.IGNORECASE), questdb_types.Byte, GenericDataType.BOOLEAN),
-        (re.compile("^SHORT", re.IGNORECASE), questdb_types.Short, GenericDataType.NUMERIC),
-        (re.compile("^INT", re.IGNORECASE), questdb_types.Int, GenericDataType.NUMERIC),
-        (re.compile("^LONG", re.IGNORECASE), questdb_types.Long, GenericDataType.NUMERIC),
-        (re.compile("^FLOAT", re.IGNORECASE), questdb_types.Float, GenericDataType.NUMERIC),
-        (re.compile("^DOUBLE'", re.IGNORECASE), questdb_types.Double, GenericDataType.NUMERIC),
-        (re.compile("^SYMBOL", re.IGNORECASE), questdb_types.Symbol, GenericDataType.STRING),
-        (re.compile("^STRING", re.IGNORECASE), questdb_types.String, GenericDataType.STRING),
-        (re.compile("^UUID", re.IGNORECASE), questdb_types.UUID, GenericDataType.STRING),
-        (re.compile("^CHAR", re.IGNORECASE), questdb_types.Char, GenericDataType.STRING),
-        (re.compile("^TIMESTAMP", re.IGNORECASE), questdb_types.Timestamp, GenericDataType.TEMPORAL),
-        (re.compile("^DATE", re.IGNORECASE), questdb_types.Date, GenericDataType.TEMPORAL),
-        (re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE), questdb_types.GeohashLong, GenericDataType.STRING)
+        (
+            re.compile("^LONG256", re.IGNORECASE),
+            questdb_types.Long256,
+            GenericDataType.STRING
+        ),
+        (
+            re.compile("^BOOLEAN", re.IGNORECASE),
+            questdb_types.Boolean,
+            GenericDataType.BOOLEAN
+        ),
+        (
+            re.compile("^BYTE", re.IGNORECASE),
+            questdb_types.Byte,
+            GenericDataType.NUMERIC),
+        (
+            re.compile("^SHORT", re.IGNORECASE),
+            questdb_types.Short,
+            GenericDataType.NUMERIC
+        ),
+        (
+            re.compile("^INT", re.IGNORECASE),
+            questdb_types.Int,
+            GenericDataType.NUMERIC
+        ),
+        (
+            re.compile("^LONG", re.IGNORECASE),
+            questdb_types.Long,
+            GenericDataType.NUMERIC
+        ),
+        (
+            re.compile("^FLOAT", re.IGNORECASE),
+            questdb_types.Float,
+            GenericDataType.NUMERIC
+        ),
+        (
+            re.compile("^DOUBLE'", re.IGNORECASE),
+            questdb_types.Double,
+            GenericDataType.NUMERIC
+        ),
+        (
+            re.compile("^SYMBOL", re.IGNORECASE),
+            questdb_types.Symbol,
+            GenericDataType.STRING
+        ),
+        (
+            re.compile("^STRING", re.IGNORECASE),
+            questdb_types.String,
+            GenericDataType.STRING
+        ),
+        (
+            re.compile("^UUID", re.IGNORECASE),
+            questdb_types.UUID,
+            GenericDataType.STRING
+        ),
+        (
+            re.compile("^CHAR", re.IGNORECASE),
+            questdb_types.Char,
+            GenericDataType.STRING
+        ),
+        (
+            re.compile("^TIMESTAMP", re.IGNORECASE),
+            questdb_types.Timestamp,
+            GenericDataType.TEMPORAL
+        ),
+        (
+            re.compile("^DATE", re.IGNORECASE),
+            questdb_types.Date,
+            GenericDataType.TEMPORAL
+        ),
+        (
+            re.compile(r"^GEOHASH\(\d+[b|c]\)", re.IGNORECASE),
+            questdb_types.GeohashLong,
+            GenericDataType.STRING
+        )
     )
 
     @classmethod
@@ -146,15 +196,21 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
-        """SQL expression that converts epoch (seconds) to datetime that can be used in a
-        query. The reference column should be denoted as `{col}` in the return
+        """SQL expression that converts epoch (seconds) to datetime that can be used
+        in a query. The reference column should be denoted as `{col}` in the return
         expression, e.g. "FROM_UNIXTIME({col})"
         :return: SQL Expression
         """
         return '{col} * 1000000'
 
     @classmethod
-    def convert_dttm(cls, target_type: str, dttm: datetime, *_args, **_kwargs) -> Optional[str]:
+    def convert_dttm(
+            cls,
+            target_type: str,
+            dttm: datetime,
+            *_args,
+            **_kwargs
+    ) -> Optional[str]:
         """Convert a Python `datetime` object to a SQL expression.
         :param target_type: The target type of expression
         :param dttm: The datetime object
@@ -174,7 +230,9 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param type_code: Type code from cursor description
         :return: String representation of type code
         """
-        return type_code.upper() if type_code and isinstance(type_code, str) else str(type_code)
+        if type_code and isinstance(type_code, str):
+            return type_code.upper()
+        return str(type_code)
 
     @classmethod
     def get_column_spec(
@@ -204,7 +262,11 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
             generic_type = GenericDataType.TEMPORAL
         elif 'GEOHASH' in name_u and '(' in name_u and ')' in name_u:
             generic_type = GenericDataType.STRING
-        return utils.ColumnSpec(sqla_type, generic_type, generic_type == GenericDataType.TEMPORAL)
+        return utils.ColumnSpec(
+            sqla_type,
+            generic_type,
+            generic_type == GenericDataType.TEMPORAL
+        )
 
     @classmethod
     def get_sqla_column_type(
@@ -222,7 +284,11 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return questdb_types.resolve_type_from_name(native_type).impl
 
     @classmethod
-    def column_datatype_to_string(cls, sqla_column_type: TypeEngine, dialect: Dialect) -> str:
+    def column_datatype_to_string(
+            cls,
+            sqla_column_type: TypeEngine,
+            dialect: Dialect,
+    ) -> str:
         """Convert sqlalchemy column type to string representation.
         By default, removes collation and character encoding info to avoid
         unnecessarily long datatypes.
@@ -257,7 +323,17 @@ class QDBEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param cols: Columns to include in query
         :return: SQL query
         """
-        return super().select_star(database, table_name, engine, None, limit, show_cols, indent, latest_partition, cols)
+        return super().select_star(
+            database,
+            table_name,
+            engine,
+            None,
+            limit,
+            show_cols,
+            indent,
+            latest_partition,
+            cols
+        )
 
     @classmethod
     def get_function_names(cls, database) -> List[str]:
