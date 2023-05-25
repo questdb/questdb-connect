@@ -24,7 +24,7 @@
 [project]
 name = 'questdb-connect'
 #version = '1.0.6'
-version = '0.0.92'
+version = '0.0.93'
 authors = [{ name = 'questdb.io', email = 'miguel@questdb.io' }]
 description = "SqlAlchemy library."
 readme = "README.md"
@@ -45,6 +45,9 @@ dependencies = []
 
 [project.entry-points.'sqlalchemy.dialects']
 questdb = 'questdb_connect.dialect:QuestDBDialect'
+
+[project.entry-points.'superset.db_engine_specs']
+questdb = 'superset.db_engine_specs.questdb:QuestDbEngineSpec'
 
 [project.optional-dependencies]
 test = [
