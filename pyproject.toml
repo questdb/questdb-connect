@@ -24,9 +24,9 @@
 [project]
 name = 'questdb-connect'
 #version = '1.0.6'
-version = '0.0.93'
+version = '0.0.94'
 authors = [{ name = 'questdb.io', email = 'miguel@questdb.io' }]
-description = "SqlAlchemy library."
+description = "SqlAlchemy library"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [

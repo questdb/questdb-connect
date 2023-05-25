@@ -22,8 +22,8 @@
 #
 import datetime
 
+import questdb_connect as qdbc
 import sqlalchemy as sqla
-from questdb_connect import get_function_names, get_keywords, types
 from sqlalchemy.orm import Session
 
 from tests.conftest import ALL_TYPES_TABLE_NAME, collect_select_all, collect_select_all_raw_connection
@@ -112,21 +112,21 @@ def test_inspect(test_engine, test_model):
     table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
     table_columns = str([(col.name, col.type, col.primary_key) for col in table.columns])
     assert table_columns == str([
-        ('col_boolean', types.Boolean(), False),
-        ('col_byte', types.Byte(), False),
-        ('col_short', types.Short(), False),
-        ('col_int', types.Int(), False),
-        ('col_long', types.Long(), False),
-        ('col_float', types.Float(), False),
-        ('col_double', types.Double(), False),
-        ('col_symbol', types.Symbol(), False),
-        ('col_string', types.String(), False),
-        ('col_char', types.Char(), False),
-        ('col_uuid', types.UUID(), False),
-        ('col_date', types.Date(), False),
-        ('col_ts', types.Timestamp(), True),
-        ('col_geohash', types.GeohashInt(), False),
-        ('col_long256', types.Long256(), False)
+        ('col_boolean', qdbc.Boolean(), False),
+        ('col_byte', qdbc.Byte(), False),
+        ('col_short', qdbc.Short(), False),
+        ('col_int', qdbc.Int(), False),
+        ('col_long', qdbc.Long(), False),
+        ('col_float', qdbc.Float(), False),
+        ('col_double', qdbc.Double(), False),
+        ('col_symbol', qdbc.Symbol(), False),
+        ('col_string', qdbc.String(), False),
+        ('col_char', qdbc.Char(), False),
+        ('col_uuid', qdbc.UUID(), False),
+        ('col_date', qdbc.Date(), False),
+        ('col_ts', qdbc.Timestamp(), True),
+        ('col_geohash', qdbc.GeohashInt(), False),
+        ('col_long256', qdbc.Long256(), False)
     ])
 
 
@@ -223,10 +223,10 @@ def test_bulk_insert(test_engine, test_model):
 def test_functions(test_engine):
     with test_engine.connect() as conn:
         expected = [row[0] for row in conn.execute("SELECT name FROM functions()").fetchall()]
-        assert get_function_names() == expected
+        assert qdbc.get_functions_list() == expected
 
 
 def test_keywords(test_engine):
     with test_engine.connect() as conn:
         expected = [row[0] for row in conn.execute("SELECT keyword FROM keywords()").fetchall()]
-        assert get_keywords() == expected
+        assert qdbc.get_keywords_list() == expected

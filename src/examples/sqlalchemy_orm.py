@@ -27,7 +27,7 @@ import time
 
 os.environ.setdefault("SQLALCHEMY_SILENCE_UBER_WARNING", "1")
 
-import questdb_connect.dialect as qdbc
+import questdb_connect as qdbc
 from sqlalchemy import Column, MetaData, insert, text
 from sqlalchemy.orm import declarative_base
 
