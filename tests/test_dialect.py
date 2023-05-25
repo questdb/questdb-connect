@@ -23,7 +23,7 @@
 import datetime
 
 import sqlalchemy as sqla
-from questdb_connect import types
+from questdb_connect import get_function_names, get_keywords, types
 from sqlalchemy.orm import Session
 
 from tests.conftest import ALL_TYPES_TABLE_NAME, collect_select_all, collect_select_all_raw_connection
@@ -218,3 +218,15 @@ def test_bulk_insert(test_engine, test_model):
         if session:
             session.close()
         assert collect_select_all_raw_connection(test_engine, expected_rows=num_rows) == expected
+
+
+def test_functions(test_engine):
+    with test_engine.connect() as conn:
+        expected = [row[0] for row in conn.execute("SELECT name FROM functions()").fetchall()]
+        assert get_function_names() == expected
+
+
+def test_keywords(test_engine):
+    with test_engine.connect() as conn:
+        expected = [row[0] for row in conn.execute("SELECT keyword FROM keywords()").fetchall()]
+        assert get_keywords() == expected
