@@ -29,7 +29,12 @@ from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.engine.reflection import Inspector, cache
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.base import SchemaEventTarget
-from sqlalchemy.sql.compiler import DDLCompiler, GenericTypeCompiler, IdentifierPreparer, SQLCompiler
+from sqlalchemy.sql.compiler import (
+    DDLCompiler,
+    GenericTypeCompiler,
+    IdentifierPreparer,
+    SQLCompiler,
+)
 from sqlalchemy.sql.visitors import Traversible
 
 from . import remove_public_schema
@@ -42,28 +47,34 @@ logger = logging.getLogger(__name__)
 # https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
 
 
-def connection_uri(host: str, port: str, username: str, password: str, database: str = 'main'):
-    return f'questdb://{username}:{password}@{host}:{port}/{database}'
+def connection_uri(
+    host: str, port: str, username: str, password: str, database: str = "main"
+):
+    return f"questdb://{username}:{password}@{host}:{port}/{database}"
 
 
-def create_engine(host: str, port: int, username: str, password: str, database: str = 'main'):
+def create_engine(
+    host: str, port: int, username: str, password: str, database: str = "main"
+):
     return sqlalchemy.create_engine(
         connection_uri(host, port, username, password, database),
         future=False,
         hide_parameters=False,
         implicit_returning=False,
-        isolation_level='REPEATABLE READ')
+        isolation_level="REPEATABLE READ",
+    )
 
 
 # ===== QUESTDB ENGINE =====
 
+
 class QDBTableEngine(SchemaEventTarget, Traversible):
     def __init__(
-            self,
-            table_name: str,
-            ts_col_name: str,
-            partition_by: PartitionBy = PartitionBy.DAY,
-            is_wal: bool = True
+        self,
+        table_name: str,
+        ts_col_name: str,
+        partition_by: PartitionBy = PartitionBy.DAY,
+        is_wal: bool = True,
     ):
         Traversible.__init__(self)
         self.name = table_name
@@ -74,22 +85,27 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
 
     def get_table_suffix(self):
         if self.compiled is None:
-            self.compiled = ''
+            self.compiled = ""
             has_ts = self.ts_col_name is not None
             is_partitioned = self.partition_by and self.partition_by != PartitionBy.NONE
             if has_ts:
                 self.compiled += f'TIMESTAMP("{self.ts_col_name}")'
             if is_partitioned:
                 if not has_ts:
-                    raise ArgumentError(None, 'Designated timestamp must be specified for partitioned table')
-                self.compiled += f' PARTITION BY {self.partition_by.name}'
+                    raise ArgumentError(
+                        None,
+                        "Designated timestamp must be specified for partitioned table",
+                    )
+                self.compiled += f" PARTITION BY {self.partition_by.name}"
             if self.is_wal:
                 if not is_partitioned:
-                    raise ArgumentError(None, 'WAL table requires designated timestamp and partition by')
+                    raise ArgumentError(
+                        None, "WAL table requires designated timestamp and partition by"
+                    )
                 if self.is_wal:
-                    self.compiled += ' WAL'
+                    self.compiled += " WAL"
                 else:
-                    self.compiled += ' BYPASS WAL'
+                    self.compiled += " BYPASS WAL"
         return self.compiled
 
     def _set_parent(self, parent, **_kwargs):
@@ -98,14 +114,39 @@ class QDBTableEngine(SchemaEventTarget, Traversible):
 
 # ===== QUESTDB DIALECT TYPES =====
 
+
 def _none(_ignore):
     return None
 
 
 _special_chars = {
-    '(', ')', '[', '[]', '{', '}', "'", '"', ':', ';', '.',
-    '!', '%', '&', '*', '$', '@', '~', '^', '-', '?', '/', '\\',
-    ' ', '\t', '\r', '\n'
+    "(",
+    ")",
+    "[",
+    "[]",
+    "{",
+    "}",
+    "'",
+    '"',
+    ":",
+    ";",
+    ".",
+    "!",
+    "%",
+    "&",
+    "*",
+    "$",
+    "@",
+    "~",
+    "^",
+    "-",
+    "?",
+    "/",
+    "\\",
+    " ",
+    "\t",
+    "\r",
+    "\n",
 }
 
 
@@ -120,13 +161,13 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
     schema_for_object = staticmethod(_none)
 
     def __init__(
-            self,
-            dialect,
-            initial_quote='"',
-            final_quote=None,
-            escape_quote='"',
-            quote_case_sensitive_collations=False,
-            omit_schema=True,
+        self,
+        dialect,
+        initial_quote='"',
+        final_quote=None,
+        escape_quote='"',
+        quote_case_sensitive_collations=False,
+        omit_schema=True,
     ):
         super().__init__(
             dialect=dialect,
@@ -134,7 +175,8 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
             final_quote=final_quote,
             escape_quote=escape_quote,
             quote_case_sensitive_collations=quote_case_sensitive_collations,
-            omit_schema=omit_schema)
+            omit_schema=omit_schema,
+        )
 
     def quote_identifier(self, value):
         return quote_identifier(value)
@@ -144,7 +186,7 @@ class QDBIdentifierPreparer(IdentifierPreparer, abc.ABC):
 
     def format_schema(self, name):
         """Prepare a quoted schema name."""
-        return ''
+        return ""
 
     def format_table(self, table, use_schema=True, name=None):
         """Prepare a quoted table and schema name."""
@@ -161,12 +203,14 @@ class QDBDDLCompiler(DDLCompiler, abc.ABC):
     def visit_create_table(self, create, **kw):
         table = create.element
         create_table = f"CREATE TABLE {quote_identifier(table.fullname)} ("
-        create_table += ', '.join([self.get_column_specification(c.element) for c in create.columns])
-        return create_table + ') ' + table.engine.get_table_suffix()
+        create_table += ", ".join(
+            [self.get_column_specification(c.element) for c in create.columns]
+        )
+        return create_table + ") " + table.engine.get_table_suffix()
 
     def get_column_specification(self, column: Column, **_):
         if not isinstance(column.type, QDBTypeMixin):
-            raise ArgumentError('Column type is not a valid QuestDB type')
+            raise ArgumentError("Column type is not a valid QuestDB type")
         return column.type.column_spec(column.name)
 
 
@@ -181,23 +225,25 @@ class QDBSQLCompiler(SQLCompiler, abc.ABC):
 
 class QDBInspector(Inspector, abc.ABC):
     def reflecttable(
-            self,
-            table,
-            include_columns,
-            exclude_columns=(),
-            resolve_fks=True,
-            _extend_on=None,
+        self,
+        table,
+        include_columns,
+        exclude_columns=(),
+        resolve_fks=True,
+        _extend_on=None,
     ):
         # backward compatibility SQLAlchemy 1.3
-        return self.reflect_table(table, include_columns, exclude_columns, resolve_fks, _extend_on)
+        return self.reflect_table(
+            table, include_columns, exclude_columns, resolve_fks, _extend_on
+        )
 
     def reflect_table(
-            self,
-            table,
-            include_columns=None,
-            exclude_columns=None,
-            resolve_fks=False,
-            _extend_on=None,
+        self,
+        table,
+        include_columns=None,
+        exclude_columns=None,
+        resolve_fks=False,
+        _extend_on=None,
     ):
         table_name = table.name
         result_set = self.bind.execute(f"tables() WHERE name = '{table_name}'")
@@ -205,9 +251,9 @@ class QDBInspector(Inspector, abc.ABC):
             raise NoResultFound(f"Table '{table_name}' does not exist")
         table_attrs = result_set.first()
         if table_attrs:
-            col_ts_name = table_attrs['designatedTimestamp']
-            partition_by = PartitionBy[table_attrs['partitionBy']]
-            is_wal = True if table_attrs['walEnabled'] else False
+            col_ts_name = table_attrs["designatedTimestamp"]
+            partition_by = PartitionBy[table_attrs["partitionBy"]]
+            is_wal = True if table_attrs["walEnabled"] else False
         else:
             col_ts_name = None
             partition_by = PartitionBy.NONE
@@ -231,23 +277,26 @@ class QDBInspector(Inspector, abc.ABC):
         return self.format_table_columns(table_name, result_set)
 
     def get_schema_names(self):
-        return ['public']
+        return ["public"]
 
     def format_table_columns(self, table_name, result_set):
         if not result_set:
             raise NoResultFound(f"Table '{table_name}' does not exist")
-        return [{
-            'name': row[0],
-            'type': resolve_type_from_name(row[1])(),
-            'nullable': True,
-            'autoincrement': False,
-        } for row in result_set]
+        return [
+            {
+                "name": row[0],
+                "type": resolve_type_from_name(row[1])(),
+                "nullable": True,
+                "autoincrement": False,
+            }
+            for row in result_set
+        ]
 
 
 class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
-    name = 'questdb'
+    name = "questdb"
     psycopg2_version = (2, 9)
-    default_schema_name = 'public'
+    default_schema_name = "public"
     statement_compiler = QDBSQLCompiler
     ddl_compiler = QDBDDLCompiler
     type_compiler = GenericTypeCompiler
@@ -272,28 +321,38 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     @classmethod
     def dbapi(cls):
         import questdb_connect as dbapi
+
         return dbapi
 
     def get_schema_names(self, connection, **kw):
-        return ['public']
+        return ["public"]
 
     def get_table_names(self, connection, schema=None, **kw):
-        return [row.table for row in connection.execute(text('SHOW TABLES'))]
+        return [row.table for row in connection.execute(text("SHOW TABLES"))]
 
     def has_table(self, connection, table_name, schema=None):
-        return connection.execute(text(f"tables() WHERE name='{table_name}'")).rowcount == 1
+        return (
+            connection.execute(text(f"tables() WHERE name='{table_name}'")).rowcount
+            == 1
+        )
 
     @cache
     def get_columns(self, connection, table_name, schema=None, **kw):
         return self.inspector.format_table_columns(
-            table_name,
-            connection.execute(text(f"table_columns('{table_name}')"))
+            table_name, connection.execute(text(f"table_columns('{table_name}')"))
         )
 
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
         return []
 
-    def get_foreign_keys(self, connection, table_name, schema=None, postgresql_ignore_search_path=False, **kw):
+    def get_foreign_keys(
+        self,
+        connection,
+        table_name,
+        schema=None,
+        postgresql_ignore_search_path=False,
+        **kw,
+    ):
         return []
 
     def get_temp_table_names(self, connection, **kw):

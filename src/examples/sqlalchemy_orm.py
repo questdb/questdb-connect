@@ -25,7 +25,7 @@ import json
 import os
 import time
 
-os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
+os.environ.setdefault("SQLALCHEMY_SILENCE_UBER_WARNING", "1")
 
 import questdb_connect.dialect as qdbc
 from sqlalchemy import Column, MetaData, insert, text
@@ -34,13 +34,14 @@ from sqlalchemy.orm import declarative_base
 from examples import CONNECTION_ATTRS
 
 Base = declarative_base(metadata=MetaData())
-table_name = 'all_types'
+table_name = "all_types"
 
 
 class MyTable(Base):
     __tablename__ = table_name
     __table_args__ = (
-        qdbc.QDBTableEngine(table_name, 'col_ts', qdbc.PartitionBy.DAY, is_wal=True),)
+        qdbc.QDBTableEngine(table_name, "col_ts", qdbc.PartitionBy.DAY, is_wal=True),
+    )
     col_boolean = Column(qdbc.Boolean)
     col_byte = Column(qdbc.Byte)
     col_short = Column(qdbc.Short)
@@ -81,28 +82,30 @@ def main():
         with engine.connect() as conn:
             # insert a fully populated row
             now = datetime.datetime(2023, 4, 22, 18, 10, 10, 765123)
-            conn.execute(insert(MyTable).values(
-                col_boolean=True,
-                col_byte=8,
-                col_short=12,
-                col_int=13,
-                col_long=14,
-                col_float=15.234,
-                col_double=16.88993244,
-                col_symbol='coconut',
-                col_string='banana',
-                col_char='C',
-                col_uuid='6d5eb038-63d1-4971-8484-30c16e13de5b',
-                col_date=now.date(),
-                col_ts=now,
-                col_geohash='dfvgsj2vptwu',
-                col_long256='0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a'
-            ))
+            conn.execute(
+                insert(MyTable).values(
+                    col_boolean=True,
+                    col_byte=8,
+                    col_short=12,
+                    col_int=13,
+                    col_long=14,
+                    col_float=15.234,
+                    col_double=16.88993244,
+                    col_symbol="coconut",
+                    col_string="banana",
+                    col_char="C",
+                    col_uuid="6d5eb038-63d1-4971-8484-30c16e13de5b",
+                    col_date=now.date(),
+                    col_ts=now,
+                    col_geohash="dfvgsj2vptwu",
+                    col_long256="0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a",
+                )
+            )
             columns = [col.name for col in MyTable.__table__.columns]
             while True:
-                rs = conn.execute(text('all_types'))
+                rs = conn.execute(text("all_types"))
                 if rs.rowcount:
-                    print(f'rows: {rs.rowcount}')
+                    print(f"rows: {rs.rowcount}")
                     for row in rs:
                         print(json.dumps(dict(zip(columns, map(str, row))), indent=4))
                     break
@@ -111,5 +114,5 @@ def main():
             engine.dispose()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

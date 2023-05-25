@@ -20,22 +20,34 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+import os
 import re
+import time
 
 import psycopg2
+
+# QuestDB timestamps: https://questdb.io/docs/guides/working-with-timestamps-timezones/
+# The native timestamp format used by QuestDB is a Unix timestamp in microsecond resolution.
+# Although timestamps in nanoseconds will be parsed, the output will be truncated to
+# microseconds. QuestDB does not store time zone information alongside timestamp values
+# and therefore it should be assumed that all timestamps are in UTC.
+os.environ["TZ"] = "UTC"
+time.tzset()
 
 # ===== DBAPI =====
 # https://peps.python.org/pep-0249/
 
-apilevel = '2.0'
+apilevel = "2.0"
 threadsafety = 2
-paramstyle = 'pyformat'
-public_schema_filter = re.compile(r"(')?(public(?(1)\1|)\.)", re.IGNORECASE | re.MULTILINE)
+paramstyle = "pyformat"
+public_schema_filter = re.compile(
+    r"(')?(public(?(1)\1|)\.)", re.IGNORECASE | re.MULTILINE
+)
 
 
 def remove_public_schema(query):
-    if query and isinstance(query, str) and 'public' in query:
-        return re.sub(public_schema_filter, '', query)
+    if query and isinstance(query, str) and "public" in query:
+        return re.sub(public_schema_filter, "", query)
     return query
 
 
@@ -45,6 +57,7 @@ class Error(Exception):
 
 class Cursor(psycopg2.extensions.cursor):
     def execute(self, query, vars=None):
+        """execute(query, vars=None) -- Execute query with bound vars."""
         return super().execute(remove_public_schema(query), vars)
 
 
@@ -53,15 +66,16 @@ def cursor_factory(*args, **kwargs):
 
 
 def connect(**kwargs):
-    host = kwargs.get('host') or '127.0.0.1'
-    port = kwargs.get('port') or 8812
-    user = kwargs.get('username') or 'admin'
-    password = kwargs.get('password') or 'quest'
-    database = kwargs.get('database') or 'main'
+    host = kwargs.get("host") or "127.0.0.1"
+    port = kwargs.get("port") or 8812
+    user = kwargs.get("username") or "admin"
+    password = kwargs.get("password") or "quest"
+    database = kwargs.get("database") or "main"
     return psycopg2.connect(
         cursor_factory=cursor_factory,
         host=host,
         port=port,
         user=user,
         password=password,
-        database=database)
+        database=database,
+    )

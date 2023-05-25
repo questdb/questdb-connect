@@ -21,7 +21,6 @@
 #  limitations under the License.
 #
 import os
-import time
 from typing import NamedTuple
 
 os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
@@ -31,9 +30,6 @@ import questdb_connect.dialect as qdbc
 from questdb_connect import types
 from sqlalchemy import Column, MetaData, text
 from sqlalchemy.orm import declarative_base
-
-os.environ['TZ'] = 'UTC'
-time.tzset()
 
 ALL_TYPES_TABLE_NAME = 'all_types_table'
 METRICS_TABLE_NAME = 'metrics_table'
