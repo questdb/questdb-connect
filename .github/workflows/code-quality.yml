@@ -28,6 +28,6 @@ jobs:
         pip install '.[test]'
     - name: ruff
       run: |
-        python -m ruff check questdb_connect
-        python -m ruff check examples
+        python -m ruff check src/questdb_connect
+        python -m ruff check src/examples
         python -m ruff check tests
