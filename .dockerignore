@@ -11,3 +11,4 @@ Dockerfile
 questdb_connect.egg-info
 superset_toolkit
 Makefile
+dist

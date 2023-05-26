@@ -20,11 +20,29 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-import os
+import re
 
-CONNECTION_ATTRS = {
-    "host": os.environ.get("QUESTDB_CONNECT_HOST", "localhost"),
-    "port": int(os.environ.get("QUESTDB_CONNECT_PORT", "8812")),
-    "username": os.environ.get("QUESTDB_CONNECT_USER", "admin"),
-    "password": os.environ.get("QUESTDB_CONNECT_PASSWORD", "quest"),
-}
+public_schema_filter = re.compile(
+    r"(')?(public(?(1)\1|)\.)", re.IGNORECASE | re.MULTILINE
+)
+
+
+def remove_public_schema(query):
+    if query and isinstance(query, str) and "public" in query:
+        return re.sub(public_schema_filter, "", query)
+    return query
+
+
+def quote_identifier(identifier: str):
+    if not identifier:
+        return None
+    first = 0
+    last = len(identifier)
+    if identifier[first] in _QUOTES:
+        first += 1
+    if identifier[last - 1] in _QUOTES:
+        last -= 1
+    return f'"{identifier[first:last]}"'
+
+
+_QUOTES = ("'", '"')

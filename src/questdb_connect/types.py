@@ -22,10 +22,12 @@
 #
 import enum
 
-import sqlalchemy as sqla
-from sqlalchemy.exc import ArgumentError
+import sqlalchemy
+
+from .common import quote_identifier
 
 # ===== QUESTDB PARTITION TYPE =====
+
 
 class PartitionBy(enum.Enum):
     DAY = 0
@@ -38,7 +40,6 @@ class PartitionBy(enum.Enum):
 
 # ===== QUESTDB DATA TYPES =====
 
-_QUOTES = ("'", '"')
 _GEOHASH_BYTE_MAX = 8
 _GEOHASH_SHORT_MAX = 16
 _GEOHASH_INT_MAX = 32
@@ -51,19 +52,23 @@ _TYPE_CACHE = {
 
 def geohash_type_name(bits):
     if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_LONG_BITS:
-        raise ArgumentError(f'geohash precision must be int [0, {_GEOHASH_LONG_BITS}]')
+        raise sqlalchemy.exc.ArgumentError(
+            f"geohash precision must be int [0, {_GEOHASH_LONG_BITS}]"
+        )
     if 0 < bits <= _GEOHASH_BYTE_MAX:
-        return f'GEOHASH(8b)'
+        return f"GEOHASH(8b)"
     elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
-        return 'GEOHASH(3c)'
+        return "GEOHASH(3c)"
     elif _GEOHASH_SHORT_MAX < bits <= _GEOHASH_INT_MAX:
-        return 'GEOHASH(6c)'
-    return f'GEOHASH(12c)'
+        return "GEOHASH(6c)"
+    return f"GEOHASH(12c)"
 
 
 def geohash_class(bits):
     if not isinstance(bits, int) or bits < 0 or bits > _GEOHASH_LONG_BITS:
-        raise ArgumentError(f'geohash precision must be int [0, {_GEOHASH_LONG_BITS}]')
+        raise sqlalchemy.exc.ArgumentError(
+            f"geohash precision must be int [0, {_GEOHASH_LONG_BITS}]"
+        )
     if 0 < bits <= _GEOHASH_BYTE_MAX:
         return GeohashByte
     elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
@@ -73,21 +78,9 @@ def geohash_class(bits):
     return GeohashLong
 
 
-def quote_identifier(identifier: str):
-    if not identifier:
-        return None
-    first = 0
-    last = len(identifier)
-    if identifier[first] in _QUOTES:
-        first += 1
-    if identifier[last - 1] in _QUOTES:
-        last -= 1
-    return f'"{identifier[first:last]}"'
-
-
-class QDBTypeMixin(sqla.types.TypeDecorator):
-    __visit_name__ = 'QDBTypeMixin'
-    impl = sqla.types.String
+class QDBTypeMixin(sqlalchemy.types.TypeDecorator):
+    __visit_name__ = "QDBTypeMixin"
+    impl = sqlalchemy.types.String
     cache_ok = True
 
     @classmethod
@@ -102,76 +95,76 @@ class QDBTypeMixin(sqla.types.TypeDecorator):
 
 
 class Boolean(QDBTypeMixin):
-    __visit_name__ = 'BOOLEAN'
-    impl = sqla.types.Boolean
+    __visit_name__ = "BOOLEAN"
+    impl = sqlalchemy.types.Boolean
     type_code = 1
 
 
 class Byte(QDBTypeMixin):
-    __visit_name__ = 'BYTE'
-    impl = sqla.types.Integer
+    __visit_name__ = "BYTE"
+    impl = sqlalchemy.types.Integer
     type_code = 2
 
 
 class Short(QDBTypeMixin):
-    __visit_name__ = 'SHORT'
+    __visit_name__ = "SHORT"
     type_code = 3
-    impl = sqla.types.Integer
+    impl = sqlalchemy.types.Integer
 
 
 class Char(QDBTypeMixin):
-    __visit_name__ = 'CHAR'
+    __visit_name__ = "CHAR"
     type_code = 4
 
 
 class Int(QDBTypeMixin):
-    __visit_name__ = 'INT'
+    __visit_name__ = "INT"
     type_code = 5
-    impl = sqla.types.Integer
+    impl = sqlalchemy.types.Integer
 
 
 class Long(QDBTypeMixin):
-    __visit_name__ = 'LONG'
+    __visit_name__ = "LONG"
     type_code = 6
-    impl = sqla.types.Integer
+    impl = sqlalchemy.types.Integer
 
 
 class Date(QDBTypeMixin):
-    __visit_name__ = 'DATE'
+    __visit_name__ = "DATE"
     type_code = 7
-    impl = sqla.types.Date
+    impl = sqlalchemy.types.Date
 
 
 class Timestamp(QDBTypeMixin):
-    __visit_name__ = 'TIMESTAMP'
+    __visit_name__ = "TIMESTAMP"
     type_code = 8
-    impl = sqla.types.DateTime
+    impl = sqlalchemy.types.DateTime
 
 
 class Float(QDBTypeMixin):
-    __visit_name__ = 'FLOAT'
+    __visit_name__ = "FLOAT"
     type_code = 9
-    impl = sqla.types.Float
+    impl = sqlalchemy.types.Float
 
 
 class Double(QDBTypeMixin):
-    __visit_name__ = 'DOUBLE'
+    __visit_name__ = "DOUBLE"
     type_code = 10
-    impl = sqla.types.Float
+    impl = sqlalchemy.types.Float
 
 
 class String(QDBTypeMixin):
-    __visit_name__ = 'STRING'
+    __visit_name__ = "STRING"
     type_code = 11
 
 
 class Symbol(QDBTypeMixin):
-    __visit_name__ = 'SYMBOL'
+    __visit_name__ = "SYMBOL"
     type_code = 12
 
 
 class Long256(QDBTypeMixin):
-    __visit_name__ = 'LONG256'
+    __visit_name__ = "LONG256"
     type_code = 13
 
 
@@ -196,7 +189,7 @@ class GeohashLong(QDBTypeMixin):
 
 
 class UUID(QDBTypeMixin):
-    __visit_name__ = 'UUID'
+    __visit_name__ = "UUID"
     type_code = 19
 
 
@@ -232,12 +225,14 @@ def resolve_type_from_name(type_name):
             if type_class:
                 _TYPE_CACHE[type_name] = type_class
                 break
-            elif 'GEOHASH' in type_name.upper() and '(' in type_name and ')' in type_name:
-                open_p = type_name.index('(')
-                close_p = type_name.index(')')
-                description = type_name[open_p + 1:close_p]
+            elif (
+                "GEOHASH" in type_name.upper() and "(" in type_name and ")" in type_name
+            ):
+                open_p = type_name.index("(")
+                close_p = type_name.index(")")
+                description = type_name[open_p + 1 : close_p]
                 g_size = int(description[:-1])
-                if description[-1] in ('C', 'c'):
+                if description[-1] in ("C", "c"):
                     g_size *= 5
                 type_class = geohash_class(g_size)
                 break

@@ -35,5 +35,5 @@ RUN rm -rf /var/lib/apt/lists/*
 
 COPY . /app
 WORKDIR /app
-RUN pip install -U pip && pip install psycopg2-binary && pip install 'SQLAlchemy<=1.4.47' && pip install 'sqlparse==0.4.3' && pip install .
+RUN pip install -U pip && pip install psycopg2-binary 'SQLAlchemy<=1.4.47' .
 CMD ["python", "src/examples/sqlalchemy_orm.py"]

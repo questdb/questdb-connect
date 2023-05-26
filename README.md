@@ -48,6 +48,13 @@ You can install this package using pip:
 pip install questdb-connect
 ```
 
+This will be the URI for QuestDB:
+
+```shell
+questdb://admin:quest@localhost:8812/main
+questdb://admin:quest@host.docker.internal:8812/main
+```
+
 ## SQLALchemy Sample Usage
 
 Use the QuestDB dialect by specifying it in your SQLAlchemy connection string,
