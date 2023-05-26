@@ -24,7 +24,7 @@ import abc
 
 import sqlalchemy
 
-from ._utils import quote_identifier, remove_public_schema
+from .common import quote_identifier, remove_public_schema
 from .types import QDBTypeMixin
 
 

@@ -25,7 +25,7 @@ import time
 
 import psycopg2
 
-from ._utils import remove_public_schema
+from .common import remove_public_schema
 from .compilers import QDBDDLCompiler, QDBSQLCompiler
 from .dialect import QuestDBDialect, connection_uri, create_engine
 from .identifier_preparer import QDBIdentifierPreparer

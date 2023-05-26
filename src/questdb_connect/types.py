@@ -24,7 +24,7 @@ import enum
 
 import sqlalchemy
 
-from ._utils import quote_identifier
+from .common import quote_identifier
 
 # ===== QUESTDB PARTITION TYPE =====
 
