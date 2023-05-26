@@ -23,8 +23,8 @@
 # https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
 [project]
 name = 'questdb-connect'
-#version = '1.0.6'
-version = '0.0.97'
+#version = '1.0.7'
+version = '0.0.97' # superset development
 authors = [{ name = 'questdb.io', email = 'miguel@questdb.io' }]
 description = "SqlAlchemy library"
 readme = "README.md"
