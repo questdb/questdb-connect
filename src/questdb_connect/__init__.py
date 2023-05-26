@@ -25,14 +25,14 @@ import time
 
 import psycopg2
 
-from .common import remove_public_schema
-from .compilers import QDBDDLCompiler, QDBSQLCompiler
-from .dialect import QuestDBDialect, connection_uri, create_engine
-from .identifier_preparer import QDBIdentifierPreparer
-from .inspector import QDBInspector
-from .keywords_functions import get_functions_list, get_keywords_list
-from .table_engine import QDBTableEngine
-from .types import (
+from questdb_connect.common import remove_public_schema
+from questdb_connect.compilers import QDBDDLCompiler, QDBSQLCompiler
+from questdb_connect.dialect import QuestDBDialect, connection_uri, create_engine
+from questdb_connect.identifier_preparer import QDBIdentifierPreparer
+from questdb_connect.inspector import QDBInspector
+from questdb_connect.keywords_functions import get_functions_list, get_keywords_list
+from questdb_connect.table_engine import QDBTableEngine
+from questdb_connect.types import (
     QUESTDB_TYPES,
     UUID,
     Boolean,

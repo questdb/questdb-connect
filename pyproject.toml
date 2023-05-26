@@ -24,7 +24,7 @@
 [project]
 name = 'questdb-connect'
 #version = '1.0.6'
-version = '0.0.96'
+version = '0.0.97'
 authors = [{ name = 'questdb.io', email = 'miguel@questdb.io' }]
 description = "SqlAlchemy library"
 readme = "README.md"
