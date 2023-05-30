@@ -41,6 +41,8 @@ dependencies = []
 [project.urls]
 'Homepage' = "https://github.com/questdb/questdb-connect/"
 'Bug Tracker' = "https://github.com/questdb/questdb-connect/issues/"
+'QuestDB GitHub' = "https://github.com/questdb/questdb/"
+'QuestDB Docs' = "https://questdb.io/docs/"
 
 [project.entry-points.'sqlalchemy.dialects']
 questdb = 'questdb_connect.dialect:QuestDBDialect'
