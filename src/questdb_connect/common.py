@@ -20,16 +20,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+import enum
 import re
 
-public_schema_filter = re.compile(
-    r"(')?(public(?(1)\1|)\.)", re.IGNORECASE | re.MULTILINE
-)
+
+class PartitionBy(enum.Enum):
+    DAY = 0
+    MONTH = 1
+    YEAR = 2
+    NONE = 3
+    HOUR = 4
+    WEEK = 5
 
 
 def remove_public_schema(query):
     if query and isinstance(query, str) and "public" in query:
-        return re.sub(public_schema_filter, "", query)
+        return re.sub(_PUBLIC_SCHEMA_FILTER, "", query)
     return query
 
 
@@ -45,4 +51,7 @@ def quote_identifier(identifier: str):
     return f'"{identifier[first:last]}"'
 
 
+_PUBLIC_SCHEMA_FILTER = re.compile(
+    r"(')?(public(?(1)\1|)\.)", re.IGNORECASE | re.MULTILINE
+)
 _QUOTES = ("'", '"')

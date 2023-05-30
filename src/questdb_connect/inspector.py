@@ -24,8 +24,9 @@ import abc
 
 import sqlalchemy
 
+from .common import PartitionBy
 from .table_engine import QDBTableEngine
-from .types import PartitionBy, resolve_type_from_name
+from .types import resolve_type_from_name
 
 
 class QDBInspector(sqlalchemy.engine.reflection.Inspector, abc.ABC):

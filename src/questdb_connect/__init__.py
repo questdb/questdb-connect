@@ -25,7 +25,7 @@ import time
 
 import psycopg2
 
-from questdb_connect.common import remove_public_schema
+from questdb_connect.common import PartitionBy, remove_public_schema
 from questdb_connect.compilers import QDBDDLCompiler, QDBSQLCompiler
 from questdb_connect.dialect import QuestDBDialect, connection_uri, create_engine
 from questdb_connect.identifier_preparer import QDBIdentifierPreparer
@@ -48,7 +48,6 @@ from questdb_connect.types import (
     Int,
     Long,
     Long256,
-    PartitionBy,
     QDBTypeMixin,
     Short,
     String,
@@ -107,6 +106,3 @@ def connect(**kwargs):
     get_keywords_list(conn)
     get_functions_list(conn)
     return conn
-
-
-_QUOTES = ("'", '"')

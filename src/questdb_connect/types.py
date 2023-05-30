@@ -26,20 +26,6 @@ import sqlalchemy
 
 from .common import quote_identifier
 
-# ===== QUESTDB PARTITION TYPE =====
-
-
-class PartitionBy(enum.Enum):
-    DAY = 0
-    MONTH = 1
-    YEAR = 2
-    NONE = 3
-    HOUR = 4
-    WEEK = 5
-
-
-# ===== QUESTDB DATA TYPES =====
-
 _GEOHASH_BYTE_MAX = 8
 _GEOHASH_SHORT_MAX = 16
 _GEOHASH_INT_MAX = 32

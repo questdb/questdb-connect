@@ -22,7 +22,7 @@
 #
 import sqlalchemy
 
-from .types import PartitionBy
+from .common import PartitionBy
 
 
 class QDBTableEngine(
