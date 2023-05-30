@@ -20,21 +20,20 @@ The Python module is available here:
 </a>
 <p></p>
 
-_Psycopg2_ is a widely used and trusted Python module for connecting to and working with PostgreSQL databases.
-It provides a comprehensive set of features for interacting with the PostgreSQL database system.
+_Psycopg2_ is a widely used and trusted Python module for connecting to, and working with, QuestDB and other
+PostgreSQL databases.
 
-_SQLAlchemy_ is an open-source SQL toolkit and ORM library for Python. It provides a high-level API for
-communicating with relational databases, including schema creation and modification, an SQL expression
-language, and database connection management. The ORM layer abstracts away the complexities of the
-database, allowing developers to work with Python objects instead of raw SQL statements.
+_SQLAlchemy_ is a SQL toolkit and ORM library for Python. It provides a high-level API for communicating with 
+relational databases, including schema creation and modification. The ORM layer abstracts away the complexities 
+of the database, allowing developers to work with Python objects instead of raw SQL statements.
 
-_Apache Superset_ is a popular open-source business intelligence web application that enables users to
-visualize and explore data through customizable dashboards and reports. It provides a rich set of data
-visualizations, including charts, tables, and maps.
+_Apache Superset_ is an open-source business intelligence web application that enables users to visualize and 
+explore data through customizable dashboards and reports. It provides a rich set of data visualizations, including 
+charts, tables, and maps.
 
 ## Requirements
 
-* **Python from 3.8.x to 3.10.x** (superset itself use version _3.9.x_)
+* **Python from 3.9 to 3.11** (superset itself use version _3.9.x_)
 * **Psycopg2** `('psycopg2-binary~=2.9.6')`
 * **SQLAlchemy** `('SQLAlchemy<=1.4.47')`
 
@@ -48,17 +47,16 @@ You can install this package using pip:
 pip install questdb-connect
 ```
 
-This will be the URI for QuestDB:
+## SQLALchemy Sample Usage
+
+Use the QuestDB dialect by specifying it in your SQLAlchemy connection string:
 
 ```shell
 questdb://admin:quest@localhost:8812/main
 questdb://admin:quest@host.docker.internal:8812/main
 ```
 
-## SQLALchemy Sample Usage
-
-Use the QuestDB dialect by specifying it in your SQLAlchemy connection string,
-from that point on use SQLAlchemy:
+From that point on use standard SQLAlchemy:
 
 ```python
 import datetime
@@ -102,10 +100,11 @@ if __name__ == '__main__':
 
 ## Superset Installation
 
-<img alt="QuestDB Logo" src="https://github.com/questdb/questdb-connect/blob/main/docs/superset.png"/>
+<a href="https://superset.apache.org/docs/installation/installing-superset-from-scratch/" target="blank">
+    <img alt="Apache Superset" src="https://github.com/questdb/questdb-connect/blob/main/docs/superset.png"/>
+</a>
 
-Follow the instructions available here
-[https://superset.apache.org/docs/installation/installing-superset-from-scratch/](https://superset.apache.org/docs/installation/installing-superset-from-scratch/).
+Follow the instructions available [here](https://superset.apache.org/docs/installation/installing-superset-from-scratch/).
 
 ## Contributing
 

@@ -23,9 +23,14 @@ commit to the main branch, make sure you build the docker container and that the
 tests pass:
 
 ```shell
+make test
 make
 make docker-test
 ```
+
+Note: `make` by itself builds the docker image, then you can call `make docker-test` to run
+the tests in docker. `make test` runs the tests locally and it is quicker, however CI only
+runs the docker version.
 
 ## Install/Run Apache Superset from repo
 
