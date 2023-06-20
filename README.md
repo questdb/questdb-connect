@@ -39,6 +39,10 @@ charts, tables, and maps.
 
 You need to install these packages because questdb-connect depends on them.
 
+## Versions 0.0.X
+
+These are versions released for testing purposes.
+
 ## Installation
 
 You can install this package using pip:

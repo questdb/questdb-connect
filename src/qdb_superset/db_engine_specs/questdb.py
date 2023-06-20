@@ -1,28 +1,38 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+#     ___                  _   ____  ____
+#    / _ \ _   _  ___  ___| |_|  _ \| __ )
+#   | | | | | | |/ _ \/ __| __| | | |  _ \
+#   | |_| | |_| |  __/\__ \ |_| |_| | |_) |
+#    \__\_\\__,_|\___||___/\__|____/|____/
 #
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
+#  Copyright (c) 2014-2019 Appsicle
+#  Copyright (c) 2019-2023 QuestDB
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+from __future__ import annotations
+
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 import questdb_connect.types as qdbc_types
 from flask_babel import gettext as __
 from marshmallow import fields, Schema
+from questdb_connect.common import remove_public_schema
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy.sql.expression import text, TextClause
 from sqlalchemy.types import TypeEngine
 
 from superset.db_engine_specs.base import (
@@ -30,14 +40,14 @@ from superset.db_engine_specs.base import (
     BasicParametersMixin,
     BasicParametersType,
 )
-from superset.models.core import Database
+
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
 
 class QuestDbParametersSchema(Schema):
     username = fields.String(
-        description=__("user"),
+        description=__("username"),
         dump_default="admin",
         load_default="admin",
     )
@@ -68,7 +78,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
     engine_name = "QuestDB"
     default_driver = "psycopg2"
     encryption_parameters = {"sslmode": "prefer"}
-    sqlalchemy_uri_placeholder = "questdb://user:password@host:port/database"
+    sqlalchemy_uri_placeholder = "questdb://username:password@host:port/database"
     parameters_schema = QuestDbParametersSchema()
     time_groupby_inline = False
     allows_hidden_cc_in_orderby = True
@@ -76,7 +86,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
     try_remove_schema_from_table_name = True
     max_column_name_length = 120
     supports_dynamic_schema = False
-    top_keywords: Set[str] = set({})
+    top_keywords: set[str] = set({})
     # https://en.wikipedia.org/wiki/ISO_8601#Durations
     # https://questdb.io/docs/reference/function/date-time/#date_trunc
     _time_grain_expressions = {
@@ -168,7 +178,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
     def build_sqlalchemy_uri(
         cls,
         parameters: BasicParametersType,
-        encrypted_extra: Optional[Dict[str, str]] = None,
+        encrypted_extra: dict[str, str] | None = None,
     ) -> str:
         host = parameters.get("host")
         port = parameters.get("port")
@@ -176,6 +186,11 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         password = parameters.get("password")
         database = parameters.get("database")
         return f"questdb://{username}:{password}@{host}:{port}/{database}"
+
+    @classmethod
+    def get_default_schema_for_query(cls, database, query) -> str | None:
+        """Return the default schema for a given query."""
+        return None
 
     @classmethod
     def epoch_to_dttm(cls) -> str:
@@ -188,8 +203,8 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def convert_dttm(
-        cls, target_type: str, dttm: datetime, db_extra: Optional[Dict[str, Any]] = None
-    ) -> Optional[str]:
+        cls, target_type: str, dttm: datetime, db_extra: dict[str, Any] | None = None
+    ) -> str | None:
         """Convert a Python `datetime` object to a SQL expression.
         :param target_type: The target type of expression
         :param dttm: The datetime object
@@ -204,7 +219,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         return None
 
     @classmethod
-    def get_datatype(cls, type_code: Any) -> Optional[str]:
+    def get_datatype(cls, type_code: Any) -> str | None:
         """Change column type code from cursor description to string representation.
         :param type_code: Type code from cursor description
         :return: String representation of type code
@@ -216,10 +231,10 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
     @classmethod
     def get_column_spec(
         cls,
-        native_type: Optional[str],
-        db_extra: Optional[Dict[str, Any]] = None,
+        native_type: str | None,
+        db_extra: dict[str, Any] | None = None,
         source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
-    ) -> Optional[utils.ColumnSpec]:
+    ) -> utils.ColumnSpec | None:
         """Get generic type related specs regarding a native column type.
         :param native_type: Native database type
         :param db_extra: The database extra object
@@ -250,10 +265,10 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
     @classmethod
     def get_sqla_column_type(
         cls,
-        native_type: Optional[str],
-        db_extra: Optional[Dict[str, Any]] = None,
+        native_type: str | None,
+        db_extra: dict[str, Any] | None = None,
         source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
-    ) -> Optional[TypeEngine]:
+    ) -> TypeEngine | None:
         """Converts native database type to sqlalchemy column type.
         :param native_type: Native database type
         :param db_extra: The database extra object
@@ -265,15 +280,15 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
     @classmethod
     def select_star(  # pylint: disable=too-many-arguments
         cls,
-        database: Database,
+        database: Any,
         table_name: str,
         engine: Engine,
-        schema: Optional[str] = None,
+        schema: str | None = None,
         limit: int = 100,
         show_cols: bool = False,
         indent: bool = True,
         latest_partition: bool = True,
-        cols: Optional[List[Dict[str, Any]]] = None,
+        cols: list[dict[str, Any]] | None = None,
     ) -> str:
         """Generate a "SELECT * from table_name" query with appropriate limit.
         :param database: Database instance
@@ -300,14 +315,26 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         )
 
     @classmethod
-    def get_allow_cost_estimate(cls, extra: Dict[str, Any]) -> bool:
+    def get_allow_cost_estimate(cls, extra: dict[str, Any]) -> bool:
         return False
 
     @classmethod
     def get_view_names(
         cls,
-        database: Database,
+        database,
         inspector: Inspector,
-        schema: Optional[str],
-    ) -> Set[str]:
-        return set({})
+        schema: str | None,
+    ) -> set[str]:
+        return set()
+
+    @classmethod
+    def get_text_clause(cls, clause: str) -> TextClause:
+        """
+        SQLAlchemy wrapper to ensure text clauses are escaped properly
+
+        :param clause: string clause with potentially unescaped characters
+        :return: text clause with escaped characters
+        """
+        if cls.allows_escaped_colons:
+            clause = clause.replace(":", "\\:")
+        return text(remove_public_schema(clause))
