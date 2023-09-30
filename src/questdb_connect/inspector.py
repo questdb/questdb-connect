@@ -64,12 +64,15 @@ class QDBInspector(sqlalchemy.engine.reflection.Inspector, abc.ABC):
             col_ts_name = None
             partition_by = PartitionBy.NONE
             is_wal = True
+        dedup_upsert_keys = []
         for row in self.bind.execute(f"table_columns('{table_name}')"):
             col_name = row[0]
             if include_columns and col_name not in include_columns:
                 continue
             if exclude_columns and col_name in exclude_columns:
                 continue
+            if row[6]:  # upsertKey
+                dedup_upsert_keys.append(col_name)
             col_type = resolve_type_from_name(row[1])
             if col_ts_name and col_ts_name.upper() == col_name.upper():
                 table.append_column(
@@ -77,7 +80,13 @@ class QDBInspector(sqlalchemy.engine.reflection.Inspector, abc.ABC):
                 )
             else:
                 table.append_column(sqlalchemy.Column(col_name, col_type))
-        table.engine = QDBTableEngine(table_name, col_ts_name, partition_by, is_wal)
+        table.engine = QDBTableEngine(
+            table_name,
+            col_ts_name,
+            partition_by,
+            is_wal,
+            tuple(dedup_upsert_keys) if dedup_upsert_keys else None,
+        )
         table.metadata = sqlalchemy.MetaData()
 
     def get_columns(self, table_name, schema=None, **kw):

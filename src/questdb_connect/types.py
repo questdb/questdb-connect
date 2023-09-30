@@ -42,12 +42,12 @@ def geohash_type_name(bits):
             f"geohash precision must be int [0, {_GEOHASH_LONG_BITS}]"
         )
     if 0 < bits <= _GEOHASH_BYTE_MAX:
-        return f"GEOHASH(8b)"
+        return "GEOHASH(8b)"
     elif _GEOHASH_BYTE_MAX < bits <= _GEOHASH_SHORT_MAX:
         return "GEOHASH(3c)"
     elif _GEOHASH_SHORT_MAX < bits <= _GEOHASH_INT_MAX:
         return "GEOHASH(6c)"
-    return f"GEOHASH(12c)"
+    return "GEOHASH(12c)"
 
 
 def geohash_class(bits):

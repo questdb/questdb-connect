@@ -105,7 +105,15 @@ def test_metrics_fixture(test_engine):
 
     class TableMetrics(Base):
         __tablename__ = METRICS_TABLE_NAME
-        __table_args__ = (qdbc.QDBTableEngine(METRICS_TABLE_NAME, 'ts', qdbc.PartitionBy.HOUR, is_wal=True),)
+        __table_args__ = (
+            qdbc.QDBTableEngine(
+                METRICS_TABLE_NAME,
+                'ts',
+                qdbc.PartitionBy.HOUR,
+                is_wal=True,
+                dedup_upsert_keys=('source', 'attr_name', 'ts')
+            ),
+        )
         source = Column(qdbc.Symbol)
         attr_name = Column(qdbc.Symbol)
         attr_value = Column(qdbc.Double)

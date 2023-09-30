@@ -26,7 +26,12 @@ import questdb_connect as qdbc
 import sqlalchemy as sqla
 from sqlalchemy.orm import Session
 
-from tests.conftest import ALL_TYPES_TABLE_NAME, collect_select_all, collect_select_all_raw_connection
+from tests.conftest import (
+    ALL_TYPES_TABLE_NAME,
+    METRICS_TABLE_NAME,
+    collect_select_all,
+    collect_select_all_raw_connection,
+)
 
 
 def test_insert(test_engine, test_model):
@@ -82,7 +87,7 @@ def test_insert(test_engine, test_model):
     assert collect_select_all_raw_connection(test_engine, expected_rows=2) == expected
 
 
-def test_inspect(test_engine, test_model):
+def test_inspect_1(test_engine, test_model):
     now = datetime.datetime(2023, 4, 12, 23, 55, 59, 342380)
     now_date = now.date()
     session = Session(test_engine)
@@ -127,6 +132,18 @@ def test_inspect(test_engine, test_model):
         ('col_ts', qdbc.Timestamp(), True),
         ('col_geohash', qdbc.GeohashInt(), False),
         ('col_long256', qdbc.Long256(), False)
+    ])
+
+
+def test_inspect_2(test_engine, test_metrics):
+    metadata = sqla.MetaData()
+    table = sqla.Table(METRICS_TABLE_NAME, metadata, autoload_with=test_engine)
+    table_columns = str([(col.name, col.type, col.primary_key) for col in table.columns])
+    assert table_columns == str([
+        ('source', qdbc.Symbol(), False),
+        ('attr_name', qdbc.Symbol(), False),
+        ('attr_value', qdbc.Double(), False),
+        ('ts', qdbc.Timestamp(), True),
     ])
 
 

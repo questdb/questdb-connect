@@ -20,9 +20,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+import typing
+
 import sqlalchemy
 
-from .common import PartitionBy
+from .common import PartitionBy, quote_identifier
 
 
 class QDBTableEngine(
@@ -34,12 +36,14 @@ class QDBTableEngine(
         ts_col_name: str,
         partition_by: PartitionBy = PartitionBy.DAY,
         is_wal: bool = True,
+        dedup_upsert_keys: typing.Tuple[str] = None,
     ):
         sqlalchemy.sql.visitors.Traversible.__init__(self)
         self.name = table_name
         self.ts_col_name = ts_col_name
         self.partition_by = partition_by
         self.is_wal = is_wal
+        self.dedup_upsert_keys = dedup_upsert_keys
         self.compiled = None
 
     def get_table_suffix(self):
@@ -63,7 +67,17 @@ class QDBTableEngine(
                     )
                 if self.is_wal:
                     self.compiled += " WAL"
+                    if self.dedup_upsert_keys:
+                        self.compiled += " DEDUP UPSERT KEYS("
+                        self.compiled += ",".join(
+                            map(quote_identifier, self.dedup_upsert_keys)
+                        )
+                        self.compiled += ")"
                 else:
+                    if self.dedup_upsert_keys:
+                        raise sqlalchemy.exc.ArgumentError(
+                            None, "DEDUP only applies to WAL tables"
+                        )
                     self.compiled += " BYPASS WAL"
         return self.compiled
 

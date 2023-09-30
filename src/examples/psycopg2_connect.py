@@ -43,7 +43,7 @@ def print_partition(row):
 
 
 def print_table(row):
-    table_id, table_name, ts_column, p_by, _, _, is_wal, dir_name = row
+    table_id, table_name, ts_column, p_by, _, _, is_wal, dir_name, is_dedup = row
     msg = ", ".join(
         (
             f"Table id:{table_id}",
@@ -52,6 +52,7 @@ def print_table(row):
             f"partition-by:{p_by}",
             f"is-wal:{is_wal}",
             f"dir-name:{dir_name}",
+            f"is-dedup:{is_dedup}",
         )
     )
     print(msg)
