@@ -36,7 +36,7 @@ class QDBTableEngine(
         ts_col_name: str,
         partition_by: PartitionBy = PartitionBy.DAY,
         is_wal: bool = True,
-        dedup_upsert_keys: typing.Tuple[str] = None,
+        dedup_upsert_keys: typing.Optional[typing.Tuple[str]] = None,
     ):
         sqlalchemy.sql.visitors.Traversible.__init__(self)
         self.name = table_name
