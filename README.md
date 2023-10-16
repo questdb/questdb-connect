@@ -8,7 +8,7 @@
 
 ## QuestDB Connect
 
-This repository contains an implementation of QuestDB's dialect for [SQLAlchemy](https://www.sqlalchemy.org/),
+This repository contains the official implementation of QuestDB's dialect for [SQLAlchemy](https://www.sqlalchemy.org/),
 as well as an engine specification for [Apache Superset](https://github.com/apache/superset/), using
 [psycopg2](https://www.psycopg.org/) for database connectivity.
 

@@ -70,12 +70,12 @@ def test_epoch_to_dttm():
         ),
         (
                 "DateTime",
-                "TO_TIMESTAMP('2023-04-28T23:55:59.281567', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')",
+                "TO_TIMESTAMP('2023-04-28T23:55:59.281567', 'yyyy-MM-ddTHH:mm:ss.SSSUUU')",
                 datetime.datetime(2023, 4, 28, 23, 55, 59, 281567),
         ),
         (
                 "TimeStamp",
-                "TO_TIMESTAMP('2023-04-28T23:55:59.281567', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')",
+                "TO_TIMESTAMP('2023-04-28T23:55:59.281567', 'yyyy-MM-ddTHH:mm:ss.SSSUUU')",
                 datetime.datetime(2023, 4, 28, 23, 55, 59, 281567),
         ),
         ("UnknownType", None, datetime.datetime(2023, 4, 28, 23, 55, 59, 281567)),
@@ -83,15 +83,16 @@ def test_epoch_to_dttm():
 )
 def test_convert_dttm(target_type, expected_result, dttm) -> None:
     # datetime(year, month, day, hour, minute, second, microsecond)
+    print('sugus')
     for target in (
             target_type,
             target_type.upper(),
             target_type.lower(),
             target_type.capitalize(),
     ):
-        assert expected_result == QuestDbEngineSpec.convert_dttm(
+        assert QuestDbEngineSpec.convert_dttm(
             target_type=target, dttm=dttm
-        )
+        ) == expected_result
 
 
 def test_get_datatype():

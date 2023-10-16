@@ -176,9 +176,9 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def build_sqlalchemy_uri(
-        cls,
-        parameters: BasicParametersType,
-        encrypted_extra: dict[str, str] | None = None,
+            cls,
+            parameters: BasicParametersType,
+            encrypted_extra: dict[str, str] | None = None,
     ) -> str:
         host = parameters.get("host")
         port = parameters.get("port")
@@ -203,7 +203,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def convert_dttm(
-        cls, target_type: str, dttm: datetime, db_extra: dict[str, Any] | None = None
+            cls, target_type: str, dttm: datetime, db_extra: dict[str, Any] | None = None
     ) -> str | None:
         """Convert a Python `datetime` object to a SQL expression.
         :param target_type: The target type of expression
@@ -215,7 +215,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
             return f"TO_DATE('{dttm.date().isoformat()}', 'YYYY-MM-DD')"
         if type_u in ("DATETIME", "TIMESTAMP"):
             dttm_formatted = dttm.isoformat(sep="T", timespec="microseconds")
-            return f"TO_TIMESTAMP('{dttm_formatted}', 'yyyy-MM-ddTHH:mm:ss.SSSUUUZ')"
+            return f"TO_TIMESTAMP('{dttm_formatted}', 'yyyy-MM-ddTHH:mm:ss.SSSUUU')"
         return None
 
     @classmethod
@@ -230,10 +230,10 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def get_column_spec(
-        cls,
-        native_type: str | None,
-        db_extra: dict[str, Any] | None = None,
-        source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
+            cls,
+            native_type: str | None,
+            db_extra: dict[str, Any] | None = None,
+            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
     ) -> utils.ColumnSpec | None:
         """Get generic type related specs regarding a native column type.
         :param native_type: Native database type
@@ -264,10 +264,10 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def get_sqla_column_type(
-        cls,
-        native_type: str | None,
-        db_extra: dict[str, Any] | None = None,
-        source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
+            cls,
+            native_type: str | None,
+            db_extra: dict[str, Any] | None = None,
+            source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
     ) -> TypeEngine | None:
         """Converts native database type to sqlalchemy column type.
         :param native_type: Native database type
@@ -279,16 +279,16 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def select_star(  # pylint: disable=too-many-arguments
-        cls,
-        database: Any,
-        table_name: str,
-        engine: Engine,
-        schema: str | None = None,
-        limit: int = 100,
-        show_cols: bool = False,
-        indent: bool = True,
-        latest_partition: bool = True,
-        cols: list[dict[str, Any]] | None = None,
+            cls,
+            database: Any,
+            table_name: str,
+            engine: Engine,
+            schema: str | None = None,
+            limit: int = 100,
+            show_cols: bool = False,
+            indent: bool = True,
+            latest_partition: bool = True,
+            cols: list[dict[str, Any]] | None = None,
     ) -> str:
         """Generate a "SELECT * from table_name" query with appropriate limit.
         :param database: Database instance
@@ -320,10 +320,10 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
 
     @classmethod
     def get_view_names(
-        cls,
-        database,
-        inspector: Inspector,
-        schema: str | None,
+            cls,
+            database,
+            inspector: Inspector,
+            schema: str | None,
     ) -> set[str]:
         return set()
 
