@@ -9,3 +9,4 @@ venv
 questdb_connect.egg-info
 __pycache__
 dist
+build

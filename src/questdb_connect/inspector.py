@@ -22,6 +22,7 @@
 #
 import abc
 
+import psycopg2
 import sqlalchemy
 
 from .common import PartitionBy
@@ -52,7 +53,13 @@ class QDBInspector(sqlalchemy.engine.reflection.Inspector, abc.ABC):
         _extend_on=None,
     ):
         table_name = table.name
-        result_set = self.bind.execute(f"tables() WHERE name = '{table_name}'")
+        try:
+            result_set = self.bind.execute(
+                f"tables() WHERE table_name = '{table_name}'"
+            )
+        except psycopg2.DatabaseError:
+            # older version
+            result_set = self.bind.execute(f"tables() WHERE name = '{table_name}'")
         if not result_set:
             self._panic_table(table_name)
         table_attrs = result_set.first()

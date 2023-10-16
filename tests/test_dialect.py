@@ -237,6 +237,30 @@ def test_bulk_insert(test_engine, test_model):
         assert collect_select_all_raw_connection(test_engine, expected_rows=num_rows) == expected
 
 
+def test_dialect_get_schema_names(test_engine):
+    dialect = qdbc.QuestDBDialect()
+    with test_engine.connect() as conn:
+        assert dialect.get_schema_names(conn) == ["public"]
+
+
+def test_dialect_get_table_names(test_engine):
+    dialect = qdbc.QuestDBDialect()
+    with test_engine.connect() as conn:
+        table_names = dialect.get_table_names(conn, schema="public")
+        assert table_names == dialect.get_table_names(conn)
+        assert len(table_names) > 0
+
+
+def test_dialect_has_table(test_engine):
+    dialect = qdbc.QuestDBDialect()
+    with test_engine.connect() as conn:
+        for table_name in dialect.get_table_names(conn):
+            if not dialect.has_table(conn, table_name):
+                raise AssertionError()
+            if not dialect.has_table(conn, table_name, schema="public"):
+                raise AssertionError()
+
+
 def test_functions(test_engine):
     with test_engine.connect() as conn:
         expected = [row[0] for row in conn.execute("SELECT name FROM functions()").fetchall()]

@@ -87,10 +87,10 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
         return ["public"]
 
     def get_table_names(self, conn, schema=None, **kw):
-        return [row.table for row in self._exec(conn, "SHOW TABLES")]
+        return [row.table_name for row in self._exec(conn, "SHOW tables")]
 
     def has_table(self, conn, table_name, schema=None):
-        return self._exec(conn, f"tables() WHERE name='{table_name}'").rowcount == 1
+        return table_name in set(self.get_table_names(conn, schema))
 
     @sqlalchemy.engine.reflection.cache
     def get_columns(self, conn, table_name, schema=None, **kw):

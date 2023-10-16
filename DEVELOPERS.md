@@ -70,9 +70,6 @@ This will be the URI for QuestDB:
 questdb://admin:quest@host.docker.internal:8812/main
 ```
 
-**Note**: As per [https://github.com/apache/superset/pull/24172](https://github.com/apache/superset/pull/24172)
-the `Superset Engine Spec` has been moved to superset's repository.
-
 ## Build questdb-connect wheel and publish it
 
 Follow the guidelines

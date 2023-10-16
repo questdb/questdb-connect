@@ -47,27 +47,27 @@ from superset.utils.core import GenericDataType
 
 class QuestDbParametersSchema(Schema):
     username = fields.String(
-        description=__("username"),
+        metadata={"description": __("username")},
         dump_default="admin",
         load_default="admin",
     )
     password = fields.String(
-        description=__("password"),
+        metadata={"description": __("password")},
         dump_default="quest",
         load_default="quest",
     )
     host = fields.String(
-        description=__("host"),
+        metadata={"description": __("host")},
         dump_default="host.docker.internal",
         load_default="host.docker.internal",
     )
     port = fields.Integer(
-        description=__("port"),
+        metadata={"description": __("port")},
         dump_default="8812",
         load_default="8812",
     )
     database = fields.String(
-        description=__("database"),
+        metadata={"description": __("database")},
         dump_default="main",
         load_default="main",
     )
