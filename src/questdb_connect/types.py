@@ -157,25 +157,37 @@ class UUID(QDBTypeMixin):
     type_code = 19
 
 
+class Long128(QDBTypeMixin):
+    __visit_name__ = "LONG128"
+    type_code = 24
+
+
+class IPv4(QDBTypeMixin):
+    __visit_name__ = "IPv4"
+    type_code = 26
+
+
 QUESTDB_TYPES = [
-    Long256,
     Boolean,
     Byte,
     Short,
     Char,
     Int,
     Long,
-    UUID,
-    Float,
-    Double,
     Date,
     Timestamp,
-    Symbol,
+    Float,
+    Double,
     String,
+    Symbol,
+    Long256,
     GeohashByte,
     GeohashInt,
     GeohashShort,
     GeohashLong,
+    UUID,
+    Long128,
+    IPv4,
 ]
 
 
