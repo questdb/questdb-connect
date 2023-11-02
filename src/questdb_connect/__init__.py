@@ -13,7 +13,6 @@ from questdb_connect.table_engine import QDBTableEngine
 from questdb_connect.types import (
     QUESTDB_TYPES,
     UUID,
-    IPv4,
     Boolean,
     Byte,
     Char,
@@ -25,6 +24,7 @@ from questdb_connect.types import (
     GeohashLong,
     GeohashShort,
     Int,
+    IPv4,
     Long,
     Long128,
     Long256,

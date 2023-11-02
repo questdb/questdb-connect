@@ -79,23 +79,67 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         "P3M": "DATE_TRUNC('quarter', {col})",
     }
     column_type_mappings = (
-        (re.compile("^BOOLEAN$", re.IGNORECASE), qdbc_types.Boolean, GenericDataType.BOOLEAN),
+        (
+            re.compile("^BOOLEAN$", re.IGNORECASE),
+            qdbc_types.Boolean,
+            GenericDataType.BOOLEAN,
+        ),
         (re.compile("^BYTE$", re.IGNORECASE), qdbc_types.Byte, GenericDataType.NUMERIC),
-        (re.compile("^SHORT$", re.IGNORECASE), qdbc_types.Short, GenericDataType.NUMERIC),
+        (
+            re.compile("^SHORT$", re.IGNORECASE),
+            qdbc_types.Short,
+            GenericDataType.NUMERIC,
+        ),
         (re.compile("^CHAR$", re.IGNORECASE), qdbc_types.Char, GenericDataType.STRING),
         (re.compile("^INT$", re.IGNORECASE), qdbc_types.Int, GenericDataType.NUMERIC),
         (re.compile("^LONG$", re.IGNORECASE), qdbc_types.Long, GenericDataType.NUMERIC),
-        (re.compile("^DATE$", re.IGNORECASE), qdbc_types.Date, GenericDataType.TEMPORAL),
-        (re.compile("^TIMESTAMP$", re.IGNORECASE), qdbc_types.Timestamp, GenericDataType.TEMPORAL),
-        (re.compile("^FLOAT$", re.IGNORECASE), qdbc_types.Float, GenericDataType.NUMERIC),
-        (re.compile("^DOUBLE$", re.IGNORECASE), qdbc_types.Double, GenericDataType.NUMERIC),
-        (re.compile("^STRING$", re.IGNORECASE), qdbc_types.String, GenericDataType.STRING),
-        (re.compile("^SYMBOL$", re.IGNORECASE), qdbc_types.Symbol, GenericDataType.STRING),
-        (re.compile("^LONG256$", re.IGNORECASE), qdbc_types.Long256, GenericDataType.STRING),
-        (re.compile(r"^GEOHASH\(\d+[b|c]\)$", re.IGNORECASE), qdbc_types.GeohashLong, GenericDataType.STRING),
+        (
+            re.compile("^DATE$", re.IGNORECASE),
+            qdbc_types.Date,
+            GenericDataType.TEMPORAL,
+        ),
+        (
+            re.compile("^TIMESTAMP$", re.IGNORECASE),
+            qdbc_types.Timestamp,
+            GenericDataType.TEMPORAL,
+        ),
+        (
+            re.compile("^FLOAT$", re.IGNORECASE),
+            qdbc_types.Float,
+            GenericDataType.NUMERIC,
+        ),
+        (
+            re.compile("^DOUBLE$", re.IGNORECASE),
+            qdbc_types.Double,
+            GenericDataType.NUMERIC,
+        ),
+        (
+            re.compile("^STRING$", re.IGNORECASE),
+            qdbc_types.String,
+            GenericDataType.STRING,
+        ),
+        (
+            re.compile("^SYMBOL$", re.IGNORECASE),
+            qdbc_types.Symbol,
+            GenericDataType.STRING,
+        ),
+        (
+            re.compile("^LONG256$", re.IGNORECASE),
+            qdbc_types.Long256,
+            GenericDataType.STRING,
+        ),
+        (
+            re.compile(r"^GEOHASH\(\d+[b|c]\)$", re.IGNORECASE),
+            qdbc_types.GeohashLong,
+            GenericDataType.STRING,
+        ),
         (re.compile("^UUID$", re.IGNORECASE), qdbc_types.UUID, GenericDataType.STRING),
-        (re.compile("^LONG128$", re.IGNORECASE), qdbc_types.Long128, GenericDataType.STRING),
-        (re.compile("^IPV4$", re.IGNORECASE), qdbc_types.I, GenericDataType.STRING),
+        (
+            re.compile("^LONG128$", re.IGNORECASE),
+            qdbc_types.Long128,
+            GenericDataType.STRING,
+        ),
+        (re.compile("^IPV4$", re.IGNORECASE), qdbc_types.IPv4, GenericDataType.STRING),
     )
 
     @classmethod
