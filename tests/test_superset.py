@@ -2,14 +2,15 @@ import datetime
 from unittest import mock
 
 import pytest
-from qdb_superset.db_engine_specs.questdb import QuestDbEngineSpec
-from questdb_connect.types import QUESTDB_TYPES, Timestamp
 from sqlalchemy import column, literal_column
 from sqlalchemy.types import TypeEngine
 
+from qdb_superset.db_engine_specs.questdb import QuestDbEngineSpec
+from questdb_connect.types import QUESTDB_TYPES, Timestamp
+
 
 def test_build_sqlalchemy_uri():
-    request_uri = QuestDbEngineSpec.build_sqlalchemy_uri(
+    assert QuestDbEngineSpec.build_sqlalchemy_uri(
         {
             "host": "localhost",
             "port": "8812",
@@ -17,8 +18,7 @@ def test_build_sqlalchemy_uri():
             "password": "quest",
             "database": "main",
         }
-    )
-    assert request_uri == "questdb://admin:quest@localhost:8812/main"
+    ) == "questdb://admin:quest@localhost:8812/main"
 
 
 def test_default_schema_for_query():
@@ -61,7 +61,6 @@ def test_epoch_to_dttm():
 )
 def test_convert_dttm(target_type, expected_result, dttm) -> None:
     # datetime(year, month, day, hour, minute, second, microsecond)
-    print('sugus')
     for target in (
             target_type,
             target_type.upper(),
@@ -122,3 +121,15 @@ def test_time_ex_lowr_col_no_grain(test_engine):
     expr = QuestDbEngineSpec.get_timestamp_expr(col, None, None)
     result = str(expr.compile(None, dialect=test_engine.dialect))
     assert "lower_case" == result
+
+
+def test_execute_sql_statement(test_engine) -> None:
+    query = """
+        SELECT timestamp, country_code, SUM(load_forecast) AS daily_forecast,
+           SUM(load_actual) AS daily_actual
+        FROM energy_2018
+        SAMPLE BY 1d ALIGN TO CALENDAR;
+        """
+    with test_engine.connect() as cursor:
+        rs = QuestDbEngineSpec.execute(cursor, query)
+        print (rs)

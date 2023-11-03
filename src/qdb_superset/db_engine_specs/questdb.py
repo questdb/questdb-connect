@@ -18,7 +18,7 @@ from superset.db_engine_specs.base import (
     BasicParametersMixin,
     BasicParametersType,
 )
-
+from superset import sql_parse
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
@@ -84,15 +84,31 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
             qdbc_types.Boolean,
             GenericDataType.BOOLEAN,
         ),
-        (re.compile("^BYTE$", re.IGNORECASE), qdbc_types.Byte, GenericDataType.NUMERIC),
+        (
+            re.compile("^BYTE$", re.IGNORECASE),
+            qdbc_types.Byte,
+            GenericDataType.NUMERIC
+        ),
         (
             re.compile("^SHORT$", re.IGNORECASE),
             qdbc_types.Short,
             GenericDataType.NUMERIC,
         ),
-        (re.compile("^CHAR$", re.IGNORECASE), qdbc_types.Char, GenericDataType.STRING),
-        (re.compile("^INT$", re.IGNORECASE), qdbc_types.Int, GenericDataType.NUMERIC),
-        (re.compile("^LONG$", re.IGNORECASE), qdbc_types.Long, GenericDataType.NUMERIC),
+        (
+            re.compile("^CHAR$", re.IGNORECASE),
+            qdbc_types.Char,
+            GenericDataType.STRING
+        ),
+        (
+            re.compile("^INT$", re.IGNORECASE),
+            qdbc_types.Int,
+            GenericDataType.NUMERIC
+        ),
+        (
+            re.compile("^LONG$", re.IGNORECASE),
+            qdbc_types.Long,
+            GenericDataType.NUMERIC
+        ),
         (
             re.compile("^DATE$", re.IGNORECASE),
             qdbc_types.Date,
@@ -139,7 +155,11 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
             qdbc_types.Long128,
             GenericDataType.STRING,
         ),
-        (re.compile("^IPV4$", re.IGNORECASE), qdbc_types.IPv4, GenericDataType.STRING),
+        (
+            re.compile("^IPV4$", re.IGNORECASE),
+            qdbc_types.IPv4,
+            GenericDataType.STRING
+        ),
     )
 
     @classmethod
@@ -218,7 +238,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
             generic_type = GenericDataType.BOOLEAN
         elif name_u in ("BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE"):
             generic_type = GenericDataType.NUMERIC
-        elif name_u in ("SYMBOL", "STRING", "CHAR", "LONG256", "UUID"):
+        elif name_u in ("SYMBOL", "STRING", "CHAR", "LONG256", "UUID", "LONG128", "IPV4"):
             generic_type = GenericDataType.STRING
         elif name_u in ("DATE", "TIMESTAMP"):
             generic_type = GenericDataType.TEMPORAL
@@ -307,3 +327,21 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         if cls.allows_escaped_colons:
             clause = clause.replace(":", "\\:")
         return text(remove_public_schema(clause))
+
+    @classmethod
+    def execute(  # pylint: disable=unused-argument
+            cls,
+            cursor: Any,
+            query: str,
+            **kwargs: Any,
+    ) -> None:
+        """ Execute a SQL query
+        :param cursor: Cursor instance
+        :param query: Query to execute
+        :param kwargs: kwargs to be passed to cursor.execute()
+        :return:
+        """
+        try:
+            cursor.execute(sql_parse.strip_comments_from_sql(query))
+        except Exception as ex:
+            raise cls.get_dbapi_mapped_exception(ex) from ex

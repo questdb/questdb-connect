@@ -1,5 +1,3 @@
-import enum
-
 import sqlalchemy
 
 from .common import quote_identifier
@@ -163,7 +161,7 @@ class Long128(QDBTypeMixin):
 
 
 class IPv4(QDBTypeMixin):
-    __visit_name__ = "IPv4"
+    __visit_name__ = "IPV4"
     type_code = 26
 
 
