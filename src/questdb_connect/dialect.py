@@ -56,7 +56,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     supports_is_distinct_from = False
 
     @classmethod
-    def dbapi(cls):
+    def import_dbapi(cls):
         import questdb_connect as dbapi
 
         return dbapi
