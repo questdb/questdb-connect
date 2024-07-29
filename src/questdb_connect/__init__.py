@@ -72,7 +72,7 @@ def cursor_factory(*args, **kwargs):
 def connect(**kwargs):
     host = kwargs.get("host") or "127.0.0.1"
     port = kwargs.get("port") or 8812
-    user = kwargs.get("username") or "admin"
+    user = kwargs.get("user") or "admin"
     password = kwargs.get("password") or "quest"
     database = kwargs.get("database") or "main"
     conn = psycopg2.connect(
