@@ -68,7 +68,7 @@ import os
 
 os.environ.setdefault('SQLALCHEMY_SILENCE_UBER_WARNING', '1')
 
-import questdb_connect.dialect as qdbc
+import questdb_connect as qdbc
 from sqlalchemy import Column, MetaData, create_engine, insert
 from sqlalchemy.orm import declarative_base
 
