@@ -2,8 +2,6 @@ import datetime
 from unittest import mock
 
 import pytest
-import sqlalchemy
-
 from qdb_superset.db_engine_specs.questdb import QuestDbEngineSpec
 from questdb_connect.types import QUESTDB_TYPES, Timestamp
 from sqlalchemy import column, literal_column
