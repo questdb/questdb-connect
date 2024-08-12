@@ -79,6 +79,7 @@ def main():
                     col_long256="0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a",
                 )
             )
+            conn.commit()
             columns = [col.name for col in MyTable.__table__.columns]
             while True:
                 rs = conn.execute(text("all_types"))

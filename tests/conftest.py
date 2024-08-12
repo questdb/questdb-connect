@@ -103,6 +103,7 @@ def test_metrics_fixture(test_engine):
 
 
 def collect_select_all(session, expected_rows) -> str:
+    session.commit()
     while True:
         rs = session.execute(text(f'select * from public.{ALL_TYPES_TABLE_NAME} order by 1 asc'))
         if rs.rowcount == expected_rows:
