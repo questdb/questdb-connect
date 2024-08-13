@@ -2,7 +2,6 @@ services:
   questdb:
     image: questdb/questdb:latest
     container_name: questdb_connect
-    pull_policy: never
     ports:
       - "8812:8812"
       - "9000:9000"
