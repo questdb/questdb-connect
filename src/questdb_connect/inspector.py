@@ -35,13 +35,13 @@ class QDBInspector(sqlalchemy.engine.reflection.Inspector, abc.ABC):
         try:
             result_set = self.bind.execute(
                 sqlalchemy.text(
-                    f"SELECT designatedTimestamp, partitionBy, walEnabled FROM tables() WHERE table_name = '{table_name}'")
+                    "SELECT designatedTimestamp, partitionBy, walEnabled FROM tables() WHERE table_name = :tn"), {"tn": table_name}
             )
         except psycopg2.DatabaseError:
             # older version
             result_set = self.bind.execute(
                 sqlalchemy.text(
-                    f"SELECT designatedTimestamp, partitionBy, walEnabled FROM tables() WHERE name = '{table_name}'")
+                    "SELECT designatedTimestamp, partitionBy, walEnabled FROM tables() WHERE name = :tn"), {"tn": table_name}
             )
         if not result_set:
             self._panic_table(table_name)
@@ -56,7 +56,7 @@ class QDBInspector(sqlalchemy.engine.reflection.Inspector, abc.ABC):
             is_wal = True
         dedup_upsert_keys = []
         for row in self.bind.execute(
-                sqlalchemy.text(f"SELECT \"column\", \"type\", \"upsertKey\" FROM table_columns('{table_name}')")
+                sqlalchemy.text("SELECT \"column\", \"type\", \"upsertKey\" FROM table_columns(:tn)"), {"tn": table_name}
         ):
             col_name = row[0]
             if include_columns and col_name not in include_columns:
@@ -79,7 +79,7 @@ class QDBInspector(sqlalchemy.engine.reflection.Inspector, abc.ABC):
         table.metadata = sqlalchemy.MetaData()
 
     def get_columns(self, table_name, schema=None, **kw):
-        result_set = self.bind.execute(f"table_columns('{table_name}')")
+        result_set = self.bind.execute(sqlalchemy.text("SELECT \"column\", \"type\" FROM table_columns(:tn)"), {"tn": table_name})
         return self.format_table_columns(table_name, result_set)
 
     def get_schema_names(self):
