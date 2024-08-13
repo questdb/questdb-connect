@@ -1,6 +1,3 @@
-import sqlalchemy
-
-
 def get_keywords_list(conn=None):
     return __initialize_list(
         conn, "SELECT keyword FROM keywords()", __keywords, __default_keywords
