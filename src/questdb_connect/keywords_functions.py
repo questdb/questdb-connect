@@ -17,7 +17,7 @@ def __initialize_list(conn, sql_stmt, target_list, default_target_list):
     if not target_list:
         try:
             with conn.cursor() as functions_cur:
-                functions_cur.execute(sqlalchemy.text(sql_stmt))
+                functions_cur.execute(sql_stmt)
                 for func_row in functions_cur.fetchall():
                     target_list.append(func_row[0])
         except Exception as _ignore:
