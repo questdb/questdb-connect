@@ -1,7 +1,5 @@
 import datetime
 
-import sqlalchemy
-
 import questdb_connect as qdbc
 import sqlalchemy as sqla
 from sqlalchemy.orm import Session
@@ -243,13 +241,13 @@ def test_dialect_has_table(test_engine):
 
 def test_functions(test_engine):
     with test_engine.connect() as conn:
-        sql = sqlalchemy.text("SELECT name FROM functions()")
+        sql = sqla.text("SELECT name FROM functions()")
         expected = [row[0] for row in conn.execute(sql).fetchall()]
         assert qdbc.get_functions_list() == expected
 
 
 def test_keywords(test_engine):
     with test_engine.connect() as conn:
-        sql = sqlalchemy.text("SELECT keyword FROM keywords()")
+        sql = sqla.text("SELECT keyword FROM keywords()")
         expected = [row[0] for row in conn.execute(sql).fetchall()]
         assert qdbc.get_keywords_list() == expected
