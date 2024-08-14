@@ -23,7 +23,7 @@ def create_engine(
 ):
     return sqlalchemy.create_engine(
         connection_uri(host, port, username, password, database),
-        future=False,
+        future=True,
         hide_parameters=False,
         implicit_returning=False,
         isolation_level="REPEATABLE READ",

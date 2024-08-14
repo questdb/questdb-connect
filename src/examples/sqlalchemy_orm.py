@@ -47,9 +47,9 @@ def main():
                 Base.metadata.drop_all(engine)
                 break
             except Exception as see:
-                if "Connection refused" in str(see.orig):
+                if "Connection refused" in str(see) or (hasattr(see, 'orig') and "Connection refused" in str(see.orig)):
                     print(f"awaiting for QuestDB to start")
-                    time.sleep(3)
+                    time.sleep(10)
                 else:
                     raise see
 
@@ -79,6 +79,7 @@ def main():
                     col_long256="0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a",
                 )
             )
+            conn.commit()
             columns = [col.name for col in MyTable.__table__.columns]
             while True:
                 rs = conn.execute(text("all_types"))

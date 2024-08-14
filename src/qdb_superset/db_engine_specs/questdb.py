@@ -12,6 +12,7 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.sql.expression import text, TextClause
 from sqlalchemy.types import TypeEngine
+from sqlalchemy import text
 
 from superset.db_engine_specs.base import (
     BaseEngineSpec,
@@ -330,6 +331,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :return:
         """
         try:
-            cursor.execute(sql_parse.strip_comments_from_sql(query))
+            sql = sql_parse.strip_comments_from_sql(query)
+            cursor.execute(text(sql))
         except Exception as ex:
             raise cls.get_dbapi_mapped_exception(ex) from ex
