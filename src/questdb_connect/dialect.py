@@ -19,13 +19,25 @@ def connection_uri(
 
 
 def create_engine(
-    host: str, port: int, username: str, password: str, database: str = "main"
+    host: str, port: str, username: str, password: str, database: str = "main"
 ):
     return sqlalchemy.create_engine(
         connection_uri(host, port, username, password, database),
         future=True,
         hide_parameters=False,
         implicit_returning=False,
+        isolation_level="REPEATABLE READ",
+    )
+
+
+def create_superset_engine(
+    host: str, port: str, username: str, password: str, database: str = "main"
+):
+    return sqlalchemy.create_engine(
+        connection_uri(host, port, username, password, database),
+        future=False,
+        hide_parameters=False,
+        implicit_returning=True,
         isolation_level="REPEATABLE READ",
     )
 

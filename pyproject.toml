@@ -1,8 +1,8 @@
 [project]
 # https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
 name = 'questdb-connect'
-version = '1.1.0' # Standalone production version (with engine)
-# version = '0.0.105' # testing version
+version = '1.1.1' # Standalone production version (with engine)
+# version = '0.0.113' # testing version
 authors = [{ name = 'questdb.io', email = 'miguel@questdb.io' }]
 description = "SqlAlchemy library"
 readme = "README.md"

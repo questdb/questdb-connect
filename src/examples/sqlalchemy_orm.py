@@ -47,7 +47,9 @@ def main():
                 Base.metadata.drop_all(engine)
                 break
             except Exception as see:
-                if "Connection refused" in str(see) or (hasattr(see, 'orig') and "Connection refused" in str(see.orig)):
+                if "Connection refused" in str(see) or (
+                    hasattr(see, "orig") and "Connection refused" in str(see.orig)
+                ):
                     print(f"awaiting for QuestDB to start")
                     time.sleep(10)
                 else:

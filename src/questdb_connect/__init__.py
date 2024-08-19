@@ -5,7 +5,12 @@ import psycopg2
 
 from questdb_connect.common import PartitionBy, remove_public_schema
 from questdb_connect.compilers import QDBDDLCompiler, QDBSQLCompiler
-from questdb_connect.dialect import QuestDBDialect, connection_uri, create_engine
+from questdb_connect.dialect import (
+    QuestDBDialect,
+    connection_uri,
+    create_engine,
+    create_superset_engine,
+)
 from questdb_connect.identifier_preparer import QDBIdentifierPreparer
 from questdb_connect.inspector import QDBInspector
 from questdb_connect.keywords_functions import get_functions_list, get_keywords_list
