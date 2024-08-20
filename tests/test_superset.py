@@ -108,27 +108,25 @@ def test_get_table_names():
     assert {"table", '"public.table_3"', "table_2"} == pg_result
 
 
-def test_time_exp_literal_no_grain(test_engine):
+def test_time_exp_literal_no_grain(superset_test_engine):
     col = literal_column("COALESCE(a, b)")
     expr = QuestDbEngineSpec.get_timestamp_expr(col, None, None)
-    result = str(expr.compile(None, dialect=test_engine.dialect))
+    result = str(expr.compile(None, dialect=superset_test_engine.dialect))
     assert "COALESCE(a, b)" == result
 
 
-def test_time_ex_lowr_col_no_grain(test_engine):
+def test_time_ex_lowr_col_no_grain(superset_test_engine):
     col = column("lower_case")
     expr = QuestDbEngineSpec.get_timestamp_expr(col, None, None)
-    result = str(expr.compile(None, dialect=test_engine.dialect))
+    result = str(expr.compile(None, dialect=superset_test_engine.dialect))
     assert "lower_case" == result
 
 
-def test_execute_sql_statement(test_engine) -> None:
+def test_execute_sql_statement(superset_test_engine) -> None:
     query = """
-        SELECT timestamp, country_code, SUM(load_forecast) AS daily_forecast,
-           SUM(load_actual) AS daily_actual
-        FROM energy_2018
-        SAMPLE BY 1d ALIGN TO CALENDAR;
+        select * from tables()
+        LIMIT 1001
         """
-    with test_engine.connect() as cursor:
+    with superset_test_engine.connect() as cursor:
         rs = QuestDbEngineSpec.execute(cursor, query)
         print (rs)

@@ -12,7 +12,7 @@ class PartitionBy(enum.Enum):
 
 
 def remove_public_schema(query):
-    if query and isinstance(query, str) and "public" in query:
+    if isinstance(query, str) and query and "public" in query:
         return re.sub(_PUBLIC_SCHEMA_FILTER, "", query)
     return query
 

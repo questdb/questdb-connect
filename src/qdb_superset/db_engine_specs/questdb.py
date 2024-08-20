@@ -12,7 +12,11 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.sql.expression import text, TextClause
 from sqlalchemy.types import TypeEngine
-from sqlalchemy import text
+import logging
+
+# Configure the logging
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 from superset.db_engine_specs.base import (
     BaseEngineSpec,
@@ -193,7 +197,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         :param type_code: Type code from cursor description
         :return: String representation of type code
         """
-        if type_code and isinstance(type_code, str):
+        if isinstance(type_code, str) and type_code:
             return type_code.upper()
         return str(type_code)
 
@@ -332,6 +336,10 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         """
         try:
             sql = sql_parse.strip_comments_from_sql(query)
-            cursor.execute(text(sql))
+            cursor.execute(sql)
         except Exception as ex:
+            # Log the exception with traceback
+            logger.exception(
+                "An error occurred, query(%s): %s\nerror: %s", type(query), query, ex
+            )
             raise cls.get_dbapi_mapped_exception(ex) from ex

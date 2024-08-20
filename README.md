@@ -35,9 +35,10 @@ charts, tables, and maps.
 
 * **Python from 3.9 to 3.11** (superset itself use version _3.9.x_)
 * **Psycopg2** `('psycopg2-binary~=2.9.6')`
-* **SQLAlchemy** `('SQLAlchemy<=1.4.47')`
+* **SQLAlchemy** `('SQLAlchemy>=1.4')`
 
-You need to install these packages because questdb-connect depends on them.
+You need to install these packages because questdb-connect depends on them. Note that `questdb-connect` v1.1
+is compatible with both `SQLAlchemy` v1.4 and v2.0 while `questdb-connect` v1.0 is compatible with `SQLAlchemy` v1.4 only.
 
 ## Versions 0.0.X
 
@@ -51,7 +52,7 @@ You can install this package using pip:
 pip install questdb-connect
 ```
 
-## SQLALchemy Sample Usage
+## SQLAlchemy Sample Usage
 
 Use the QuestDB dialect by specifying it in your SQLAlchemy connection string:
 
