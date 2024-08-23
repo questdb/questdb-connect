@@ -19,10 +19,15 @@ class QDBDDLCompiler(sqlalchemy.sql.compiler.DDLCompiler, abc.ABC):
         create_table += ", ".join(
             [self.get_column_specification(c.element) for c in create.columns]
         )
-        return create_table + ") " + table.engine.get_table_suffix()
+        if (hasattr(table, "engine")):
+            return create_table + ") " + table.engine.get_table_suffix()
+        else:
+            return create_table + ")"
 
     def get_column_specification(self, column: sqlalchemy.Column, **_):
         if not isinstance(column.type, QDBTypeMixin):
+            if (column.name == 'version_num'):
+                return Column('version_num', String).type.column_spec(column.name)
             raise sqlalchemy.exc.ArgumentError(
                 "Column type is not a valid QuestDB type"
             )
