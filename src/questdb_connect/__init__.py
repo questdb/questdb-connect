@@ -43,15 +43,6 @@ from questdb_connect.types import (
     resolve_type_from_name,
 )
 
-# QuestDB timestamps: https://questdb.io/docs/guides/working-with-timestamps-timezones/
-# The native timestamp format used by QuestDB is a Unix timestamp in microsecond resolution.
-# Although timestamps in nanoseconds will be parsed, the output will be truncated to
-# microseconds. QuestDB does not store time zone information alongside timestamp values
-# and therefore it should be assumed that all timestamps are in UTC.
-if hasattr(time, "tzset"):
-    os.environ["TZ"] = "UTC"
-    time.tzset()
-
 # ===== DBAPI =====
 # https://peps.python.org/pep-0249/
 
