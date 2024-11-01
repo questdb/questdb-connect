@@ -35,6 +35,7 @@ class MyTable(Base):
     col_ts = Column(qdbc.Timestamp, primary_key=True)
     col_geohash = Column(qdbc.GeohashInt)
     col_long256 = Column(qdbc.Long256)
+    col_varchar = Column(qdbc.Varchar)
 
 
 def main():

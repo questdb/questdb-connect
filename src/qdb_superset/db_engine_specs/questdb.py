@@ -124,6 +124,11 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
             GenericDataType.STRING,
         ),
         (
+            re.compile("^VARCHAR$", re.IGNORECASE),
+            qdbc_types.Varchar,
+            GenericDataType.STRING,
+        ),
+        (
             re.compile("^SYMBOL$", re.IGNORECASE),
             qdbc_types.Symbol,
             GenericDataType.STRING,
@@ -226,6 +231,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         elif name_u in (
             "SYMBOL",
             "STRING",
+            "VARCHAR",
             "CHAR",
             "LONG256",
             "UUID",

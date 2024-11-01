@@ -33,6 +33,7 @@ from questdb_connect.types import (
     Long,
     Long128,
     Long256,
+    Varchar,
     QDBTypeMixin,
     Short,
     String,

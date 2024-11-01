@@ -86,6 +86,7 @@ def test_model_fixture(test_engine):
         col_ts = Column('col_ts', qdbc.Timestamp, primary_key=True)
         col_geohash = Column('col_geohash', qdbc.GeohashInt)
         col_long256 = Column('col_long256', qdbc.Long256)
+        col_varchar = Column('col_varchar', qdbc.Varchar)
 
     Base.metadata.drop_all(test_engine)
     Base.metadata.create_all(test_engine)
