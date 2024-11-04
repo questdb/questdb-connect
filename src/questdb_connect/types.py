@@ -164,6 +164,10 @@ class IPv4(QDBTypeMixin):
     __visit_name__ = "IPV4"
     type_code = 26
 
+class Varchar(QDBTypeMixin):
+    __visit_name__ = "VARCHAR"
+    type_code = 27
+
 
 QUESTDB_TYPES = [
     Boolean,
@@ -186,6 +190,7 @@ QUESTDB_TYPES = [
     UUID,
     Long128,
     IPv4,
+    Varchar,
 ]
 
 

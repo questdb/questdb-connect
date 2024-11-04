@@ -34,6 +34,7 @@ def test_superset_default_mappings():
         (re.compile("^UUID$", re.IGNORECASE), qdbc.UUID),
         (re.compile("^LONG118$", re.IGNORECASE), qdbc.UUID),
         (re.compile("^IPV4$", re.IGNORECASE), qdbc.IPv4),
+        (re.compile("^VARCHAR$", re.IGNORECASE), qdbc.Varchar),
     )
     for type_class in qdbc.QUESTDB_TYPES:
         for pattern, _expected_type in default_column_type_mappings:

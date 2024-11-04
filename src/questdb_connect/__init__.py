@@ -38,6 +38,7 @@ from questdb_connect.types import (
     String,
     Symbol,
     Timestamp,
+    Varchar,
     geohash_class,
     geohash_type_name,
     resolve_type_from_name,
