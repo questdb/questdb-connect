@@ -192,7 +192,7 @@ When using SQLAlchemy with QuestDB:
 - You can define primary keys in your SQLAlchemy models, but QuestDB won't enforce uniqueness for individual columns
 - Duplicate rows with identical primary key values can exist in the database
 - Data integrity must be managed at the application level
-- QuestDB support deduplication during ingestion to avoid data duplication, this can be enabled in the table creation
+- QuestDB support [deduplication](https://questdb.io/docs/concept/deduplication/) during ingestion to avoid data duplication, this can be enabled in the table creation
 
 ### Recommended Approaches
 
