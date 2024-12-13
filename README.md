@@ -185,12 +185,14 @@ using the raw SQL API, which allows direct interaction with QuestDB's time-serie
 query engine and provides better control over time-based operations.
 
 ## Superset Installation
+This repository also contains an engine specification for Apache Superset, which allows you to connect
+to QuestDB from within the Superset interface.
 
-<a href="https://superset.apache.org/docs/quickstart/" target="blank">
-    <img alt="Apache Superset" src="https://raw.githubusercontent.com/questdb/questdb-connect/refs/heads/main/docs/superset.png"/>
-</a>
+<img alt="Apache Superset" src="https://raw.githubusercontent.com/questdb/questdb-connect/refs/heads/main/docs/superset.png"/>
 
-Follow the instructions available [here](https://superset.apache.org/docs/quickstart/).
+
+Follow the official [QuestDB Superset guide](https://questdb.io/docs/third-party-tools/superset/) available on the
+QuestDB website to install and configure the QuestDB engine in Superset.
 
 ## Contributing
 
