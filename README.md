@@ -65,6 +65,7 @@ From that point on use standard SQLAlchemy:
 Example with raw SQL API:
 ```python
 import datetime
+import time
 import uuid
 from sqlalchemy import create_engine, text
 
@@ -92,11 +93,11 @@ def main():
             'source2': 'banana', 'value2': 3.14159265, 'ts2': datetime.datetime.utcnow(), 'uuid2': uuid.uuid4()
         })
 
+    # WAL is applied asynchronously, so we need to wait for it to be applied before querying
+    time.sleep(1)
+
     # Start a new transaction
     with engine.begin() as connection:
-        # Wait for all previous transactions to be applied to the table before querying
-        connection.execute(text("select wait_wal_table('signal')"))
-
         # Query the table for rows where value > 10
         result = connection.execute(
             text("SELECT source, value, ts, uuid FROM signal WHERE value > :value"),
@@ -114,7 +115,8 @@ Alternatively, you can use the ORM API:
 ```python
 import datetime
 import uuid
-import questdb_connect as qdbc
+import time
+from questdb_connect import Symbol, PartitionBy, UUID, Double, Timestamp, QDBTableEngine
 from sqlalchemy import Column, MetaData, create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -124,11 +126,11 @@ Base = declarative_base(metadata=MetaData())
 class Signal(Base):
     # Stored in a QuestDB table 'signal'. The tables has WAL enabled, is partitioned by hour, designated timestamp is 'ts'
     __tablename__ = 'signal'
-    __table_args__ = (qdbc.QDBTableEngine(None, 'ts', qdbc.PartitionBy.HOUR, is_wal=True),)
-    source = Column(qdbc.Symbol)
-    value = Column(qdbc.Double)
-    ts = Column(qdbc.Timestamp)
-    uuid = Column(qdbc.UUID, primary_key=True)
+    __table_args__ = (QDBTableEngine(None, 'ts', PartitionBy.HOUR, is_wal=True),)
+    source = Column(Symbol)
+    value = Column(Double)
+    ts = Column(Timestamp)
+    uuid = Column(UUID, primary_key=True)
 
     def __repr__(self):
         return f"Signal(source={self.source}, value={self.value}, ts={self.ts}, uuid={self.uuid})"
@@ -156,13 +158,10 @@ def main():
         ts=datetime.datetime.utcnow(),
         uuid=uuid.uuid4()
     ))
-
-
     session.commit()
 
-    # Wait for the WAL to be applied to the table before querying
-    with engine.connect() as connection:
-        connection.execute(text("select wait_wal_table('signal')"))
+    # WAL is applied asynchronously, so we need to wait for it to be applied before querying
+    time.sleep(1)
 
     # Query the table for rows where value > 10
     signals = session.query(Signal).filter(Signal.value > 10).all()
@@ -183,6 +182,69 @@ columns, foreign keys, and complex joins, in favor of time-series-specific optim
 For optimal performance and to fully leverage QuestDB's capabilities, we strongly recommend
 using the raw SQL API, which allows direct interaction with QuestDB's time-series-focused
 query engine and provides better control over time-based operations.
+
+## Primary Key Considerations
+
+QuestDB differs from traditional relational databases in its handling of data uniqueness. While most databases enforce
+primary keys to guarantee unique record identification, QuestDB operates differently due to its time-series optimized
+architecture.
+
+When using SQLAlchemy with QuestDB:
+- You can define primary keys in your SQLAlchemy models, but QuestDB won't enforce uniqueness for individual columns
+- Duplicate rows with identical primary key values can exist in the database
+- Data integrity must be managed at the application level
+- QuestDB support deduplication during ingestion to avoid data duplication, this can be enabled in the table creation
+
+### Recommended Approaches
+
+1. **Composite Keys + QuestDB Deduplication**
+
+Composite keys can be used to define uniqueness based on multiple columns. This approach:
+- Can combine timestamp with any number of additional columns
+- Works with QuestDB's deduplication capabilities
+- Useful for scenarios where uniqueness is defined by multiple attributes
+- Common combinations might include:
+    * timestamp + device_id + metric_type
+    * timestamp + location + sensor_id
+    * timestamp + instrument_id + exchange + side
+
+Deduplication is often enabled in QuestDB regardless of the primary key definition since
+it's required to avoid data duplication during ingestion. 
+
+Example:
+```python
+from questdb_connect import QDBTableEngine, PartitionBy, Double, Timestamp, Symbol
+class Measurement(Base):
+    __tablename__ = 'signal'
+    __table_args__ = (QDBTableEngine(None, 'timestamp', PartitionBy.HOUR, is_wal=True),)
+    timestamp = Column(Timestamp, primary_key=True)
+    sensor_id = Column(Symbol, primary_key=True)
+    location = Column(Symbol, primary_key=True)
+    value = Column(Double)
+```
+
+
+Choose your approach based on your data model and whether you need to leverage QuestDB's deduplication capabilities.
+
+2. **UUID-based Identification**
+
+UUIDs are ideal for QuestDB applications because they:
+- Are globally unique across distributed systems
+- Can be generated client-side without database coordination
+- Work well with high-throughput data ingestion
+
+Example:
+```python
+from questdb_connect import Symbol, PartitionBy, UUID, Double, Timestamp, QDBTableEngine
+class Signal(Base):
+    __tablename__ = 'signal'
+    __table_args__ = (QDBTableEngine(None, 'ts', PartitionBy.HOUR, is_wal=True),)
+    source = Column(Symbol)
+    value = Column(Double)
+    ts = Column(Timestamp)
+    uuid = Column(UUID, primary_key=True)
+    # other columns...
+```
 
 ## Superset Installation
 This repository also contains an engine specification for Apache Superset, which allows you to connect
