@@ -61,8 +61,7 @@ questdb://admin:quest@localhost:8812/main
 questdb://admin:quest@host.docker.internal:8812/main
 ```
 
-From that point on use standard SQLAlchemy:
-Example with raw SQL API:
+From that point on use standard SQLAlchemy. Example with raw SQL API:
 ```python
 import datetime
 import time
