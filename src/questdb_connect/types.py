@@ -1,3 +1,5 @@
+from typing import Optional
+
 import sqlalchemy
 
 from .common import quote_identifier
@@ -121,8 +123,39 @@ class String(QDBTypeMixin):
 
 
 class Symbol(QDBTypeMixin):
+    """
+    QuestDB SYMBOL type implementation with support for capacity and cache parameters.
+
+    Example usage:
+        source = Column(Symbol(capacity=128, cache=True))
+    """
     __visit_name__ = "SYMBOL"
     type_code = 12
+
+    def __init__(
+            self,
+            capacity: Optional[int] = None,
+            cache: Optional[bool] = None,
+            *args, **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        self.capacity = capacity
+        self.cache = cache
+
+    def compile(self, dialect=None):
+        params = []
+
+        if self.capacity is not None:
+            params.append(f"CAPACITY {self.capacity}")
+        if self.cache is not None:
+            params.append("CACHE" if self.cache else "NOCACHE")
+
+        if params:
+            return f"{self.__visit_name__} {' '.join(params)}"
+        return self.__visit_name__
+
+    def column_spec(self, column_name):
+        return f"{quote_identifier(column_name)} {self.compile()}"
 
 
 class Long256(QDBTypeMixin):

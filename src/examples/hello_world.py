@@ -15,7 +15,7 @@ class Signal(Base):
     __table_args__ = (
         qdbc.QDBTableEngine("signal", "ts", qdbc.PartitionBy.HOUR, is_wal=True),
     )
-    source = Column(qdbc.Symbol)
+    source = Column(qdbc.Symbol(capacity=1024, cache=False))
     value = Column(qdbc.Double)
     ts = Column(qdbc.Timestamp, primary_key=True)
 
