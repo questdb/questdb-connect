@@ -9,6 +9,7 @@ from tests.conftest import (
     METRICS_TABLE_NAME,
     collect_select_all,
     collect_select_all_raw_connection,
+    wait_until_table_is_ready,
 )
 
 
@@ -257,3 +258,187 @@ def test_keywords(test_engine):
         sql = sqla.text("SELECT keyword FROM keywords()")
         expected = [row[0] for row in conn.execute(sql).fetchall()]
         assert qdbc.get_keywords_list() == expected
+
+
+def test_limit_clause_basic(test_engine, test_model):
+    """Test basic LIMIT clause functionality."""
+    now = datetime.datetime(2023, 4, 12, 23, 55, 59, 342380)
+    now_date = now.date()
+    session = Session(test_engine)
+    num_rows = 10
+
+    try:
+        # Insert test data
+        models = [
+            test_model(
+                col_boolean=True,
+                col_byte=8,
+                col_short=12,
+                col_int=idx,  # Using idx to make rows distinct and ordered
+                col_long=14,
+                col_float=15.234,
+                col_double=16.88993244,
+                col_symbol='coconut',
+                col_string='banana',
+                col_char='C',
+                col_uuid='6d5eb038-63d1-4971-8484-30c16e13de5b',
+                col_date=now_date,
+                col_ts=now,
+                col_geohash='dfvgsj2vptwu',
+                col_long256='0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a',
+                col_varchar='pineapple'
+            ) for idx in range(num_rows)
+        ]
+        session.bulk_save_objects(models)
+        session.commit()
+
+        metadata = sqla.MetaData()
+        table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
+
+        wait_until_table_is_ready(test_engine, ALL_TYPES_TABLE_NAME, num_rows)
+
+        with test_engine.connect() as conn:
+            # simple LIMIT
+            query = sqla.select(table).limit(5)
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 5
+            assert rows[0].col_int == 0
+            assert rows[-1].col_int == 4
+
+            # LIMIT with OFFSET
+            query = sqla.select(table).limit(3).offset(2)
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 3
+            assert rows[0].col_int == 2
+            assert rows[-1].col_int == 4
+
+            # OFFSET only
+            query = sqla.select(table).offset(8)
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 2
+            assert rows[0].col_int == 8
+            assert rows[-1].col_int == 9
+
+            # LIMIT 0
+            query = sqla.select(table).limit(0)
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 0
+
+            # LIMIT 0 and offset
+            query = sqla.select(table).limit(0).offset(1)
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 0
+
+    finally:
+        if session:
+            session.close()
+
+
+def test_limit_clause_with_binds_and_expressions(test_engine, test_model):
+    """Test LIMIT clause with bind parameters and expressions."""
+    # Setup test data
+    now = datetime.datetime(2023, 4, 12, 23, 55, 59, 342380)
+    now_date = now.date()
+    session = Session(test_engine)
+    num_rows = 10
+
+    try:
+        # Insert test data
+        models = [
+            test_model(
+                col_boolean=True,
+                col_byte=8,
+                col_short=12,
+                col_int=idx,  # Using idx to make rows distinct and ordered
+                col_long=14,
+                col_float=15.234,
+                col_double=16.88993244,
+                col_symbol='coconut',
+                col_string='banana',
+                col_char='C',
+                col_uuid='6d5eb038-63d1-4971-8484-30c16e13de5b',
+                col_date=now_date,
+                col_ts=now,
+                col_geohash='dfvgsj2vptwu',
+                col_long256='0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a',
+                col_varchar='pineapple'
+            ) for idx in range(num_rows)
+        ]
+        session.bulk_save_objects(models)
+        session.commit()
+
+        metadata = sqla.MetaData()
+        table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
+
+        wait_until_table_is_ready(test_engine, ALL_TYPES_TABLE_NAME, num_rows)
+
+        with test_engine.connect() as conn:
+            # simple bindparam
+            result = conn.execute(
+                sqla.select(table).limit(sqla.bindparam('limit_val')),
+                {"limit_val": 5}
+            )
+            rows = result.fetchall()
+            assert len(rows) == 5
+            assert rows[0].col_int == 0
+            assert rows[-1].col_int == 4
+
+            # bindparam with expressions
+            result = conn.execute(
+                sqla.select(table).limit(sqla.bindparam('base_limit') * 2),
+                {"base_limit": 3}
+            )
+            rows = result.fetchall()
+            assert len(rows) == 6
+            assert rows[0].col_int == 0
+            assert rows[-1].col_int == 5
+
+            # multiple bindparams in expression
+            result = conn.execute(
+                sqla.select(table).limit(
+                    sqla.bindparam('limit_val')
+                ).offset(
+                    sqla.bindparam('offset_val')
+                ),
+                {
+                    "limit_val": 3,
+                    "offset_val": 2
+                }
+            )
+            rows = result.fetchall()
+            assert len(rows) == 3
+            assert rows[0].col_int == 2
+            assert rows[-1].col_int == 4
+
+            # bindparam with type specification
+            from sqlalchemy import Integer
+            result = conn.execute(
+                sqla.select(table).limit(
+                    sqla.bindparam('limit_val', type_=Integer) + 1
+                ),
+                {"limit_val": 4}
+            )
+            rows = result.fetchall()
+            assert len(rows) == 5
+            assert rows[0].col_int == 0
+            assert rows[-1].col_int == 4
+
+            # text() and bindparam
+            from sqlalchemy import text
+            result = conn.execute(
+                text("SELECT * FROM all_types_table LIMIT :lo, :hi"),
+                {"lo": 3, "hi": 8}
+            )
+            rows = result.fetchall()
+            assert len(rows) == 5
+            assert rows[0].col_int == 3
+            assert rows[-1].col_int == 7
+
+    finally:
+        if session:
+            session.close()
