@@ -11,6 +11,7 @@ from questdb_connect.dialect import (
     create_engine,
     create_superset_engine,
 )
+from questdb_connect.dml import select, QDBSelect
 from questdb_connect.identifier_preparer import QDBIdentifierPreparer
 from questdb_connect.inspector import QDBInspector
 from questdb_connect.keywords_functions import get_functions_list, get_keywords_list
@@ -50,6 +51,11 @@ from questdb_connect.types import (
 apilevel = "2.0"
 threadsafety = 2
 paramstyle = "pyformat"
+
+__all__ = (
+    "select",
+    "QDBSelect",
+)
 
 
 class Error(Exception):
