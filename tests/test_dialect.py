@@ -1,5 +1,6 @@
 import datetime
 
+import questdb_connect
 import questdb_connect as qdbc
 import sqlalchemy as sqla
 from sqlalchemy.orm import Session
@@ -8,9 +9,96 @@ from tests.conftest import (
     ALL_TYPES_TABLE_NAME,
     METRICS_TABLE_NAME,
     collect_select_all,
-    collect_select_all_raw_connection,
+    collect_select_all_raw_connection, wait_until_table_is_ready,
 )
 
+
+def test_sample_by_clause(test_engine, test_model):
+    """Test SAMPLE BY clause functionality."""
+    base_ts = datetime.datetime(2023, 4, 12, 0, 0, 0)
+    session = Session(test_engine)
+    try:
+        # Insert test data - one row every minute for 2 hours
+        num_rows = 120  # 2 hours * 60 minutes
+        models = [
+            test_model(
+                col_boolean=True,
+                col_byte=8,
+                col_short=12,
+                col_int=idx,
+                col_long=14,
+                col_float=15.234,
+                col_double=16.88993244,
+                col_symbol='coconut',
+                col_string='banana',
+                col_char='C',
+                col_uuid='6d5eb038-63d1-4971-8484-30c16e13de5b',
+                col_date=base_ts.date(),
+                # Add idx minutes to base timestamp
+                col_ts=base_ts + datetime.timedelta(minutes=idx),
+                col_geohash='dfvgsj2vptwu',
+                col_long256='0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a',
+                col_varchar='pineapple'
+            ) for idx in range(num_rows)
+        ]
+        session.bulk_save_objects(models)
+        session.commit()
+
+        metadata = sqla.MetaData()
+        table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
+        wait_until_table_is_ready(test_engine, ALL_TYPES_TABLE_NAME, num_rows)
+
+        with test_engine.connect() as conn:
+            # Simple SAMPLE BY
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(30, 'm')  # 30 minute samples
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 4  # 2 hours should give us 4 30-minute samples
+
+            # Verify sample averages
+            # First 30 min should average 0-29, second 30-59, etc.
+            expected_averages = [14.5, 44.5, 74.5, 104.5]  # (min+max)/2 for each 30-min period
+            for row, expected_avg in zip(rows, expected_averages):
+                assert abs(row.avg_int - expected_avg) < 0.1
+
+            # SAMPLE BY with ORDER BY
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(1, 'h')  # 1 hour samples
+                .order_by(sqla.desc('avg_int'))
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 2  # 2 one-hour samples
+            assert rows[0].avg_int > rows[1].avg_int  # Descending order
+
+            # SAMPLE BY with WHERE clause
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .where(table.c.col_int > 30)
+                .sample_by(1, 'h')
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 2
+            assert all(row.avg_int > 30 for row in rows)
+
+            # SAMPLE BY with LIMIT
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(15, 'm')  # 15 minute samples
+                .limit(3)
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 3  # Should limit to first 3 samples
+
+    finally:
+        if session:
+            session.close()
 
 def test_insert(test_engine, test_model):
     with test_engine.connect() as conn:
