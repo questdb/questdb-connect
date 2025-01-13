@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
-from sqlalchemy.sql import Select as StandardSelect
-from sqlalchemy.sql import ClauseElement
 from sqlalchemy import select as sa_select
-from sqlalchemy.sql.visitors import Visitable
+from sqlalchemy.sql import ClauseElement
+from sqlalchemy.sql import Select as StandardSelect
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.visitors import Visitable
 
 
 class SampleByClause(ClauseElement):
@@ -46,7 +48,7 @@ class QDBSelect(StandardSelect):
     def get_children(self, **kwargs: Any) -> Sequence[Visitable]:
         children = super().get_children(**kwargs)
         if self._sample_by_clause is not None:
-            children = children + [self._sample_by_clause]
+            children = [*children, self._sample_by_clause]
         return children
 
     def sample_by(
