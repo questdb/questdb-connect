@@ -1,6 +1,7 @@
 import abc
 
 import sqlalchemy
+from sqlalchemy.sql.base import elements
 
 from .common import quote_identifier, remove_public_schema
 from .types import QDBTypeMixin
@@ -36,31 +37,34 @@ class QDBSQLCompiler(sqlalchemy.sql.compiler.SQLCompiler, abc.ABC):
             return f"SAMPLE BY {sample_by.value}{sample_by.unit}"
         return f"SAMPLE BY {sample_by.value}"
 
+    def group_by_clause(self, select, **kw):
+        """Customize GROUP BY to also render SAMPLE BY."""
+        text = ""
+
+        # Add SAMPLE BY first if present
+        if select._sample_by_clause is not None:
+            text += " " + self.process(select._sample_by_clause, **kw)
+
+        # Use parent's GROUP BY implementation
+        group_by_text = super().group_by_clause(select, **kw)
+        if group_by_text:
+            text += group_by_text
+
+        return text
+
     def visit_select(self, select, **kw):
         """Add SAMPLE BY support to the standard SELECT compilation."""
 
+        # If we have SAMPLE BY but no GROUP BY,
+        # add a dummy GROUP BY clause to trigger the rendering
+        if (
+                select._sample_by_clause is not None
+                and not select._group_by_clauses
+        ):
+            select = select._clone()
+            select._group_by_clauses = [elements.TextClause("")]
+
         text = super().visit_select(select, **kw)
-
-        # TODO: The exact positioning is a big funky, fix it
-        if hasattr(select, '_sample_by_clause') and select._sample_by_clause is not None:
-            # Add SAMPLE BY before ORDER BY and LIMIT
-            sample_text = self.process(select._sample_by_clause, **kw)
-
-            # Find positions of ORDER BY and LIMIT
-            order_by_pos = text.find("ORDER BY")
-            limit_pos = text.find("LIMIT")
-
-            # Determine where to insert SAMPLE BY
-            if order_by_pos >= 0:
-                # Insert before ORDER BY
-                text = text[:order_by_pos] + sample_text + " " + text[order_by_pos:]
-            elif limit_pos >= 0:
-                # Insert before LIMIT
-                text = text[:limit_pos] + sample_text + " " + text[limit_pos:]
-            else:
-                # Append at the end
-                text += " " + sample_text
-
         return text
 
     def _is_safe_for_fast_insert_values_helper(self):
