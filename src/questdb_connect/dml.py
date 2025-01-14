@@ -83,6 +83,8 @@ class QDBSelect(StandardSelect):
         :param align_to: CALENDAR or FIRST OBSERVATION
         :param timezone: Optional timezone for calendar alignment
         :param offset: Optional offset in format '+/-HH:mm'
+        :param from_timestamp: Optional start timestamp for the sample
+        :param to_timestamp: Optional end timestamp for the sample
         """
 
         # Create a copy of our object with _generative
