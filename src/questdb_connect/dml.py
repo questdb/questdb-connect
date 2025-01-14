@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, date
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
 from sqlalchemy import select as sa_select
@@ -24,6 +25,8 @@ class SampleByClause(ClauseElement):
             align_to: str = "CALENDAR",  # default per docs
             timezone: Optional[str] = None,
             offset: Optional[str] = None,
+            from_timestamp: Optional[Union[datetime, date]] = None,
+            to_timestamp: Optional[Union[datetime, date]] = None
     ):
         self.value = value
         self.unit = unit.lower() if unit else None
@@ -31,6 +34,8 @@ class SampleByClause(ClauseElement):
         self.align_to = align_to.upper()
         self.timezone = timezone
         self.offset = offset
+        self.from_timestamp = from_timestamp
+        self.to_timestamp = to_timestamp
 
     def __str__(self) -> str:
         if self.unit:
@@ -67,6 +72,8 @@ class QDBSelect(StandardSelect):
             align_to: str = "CALENDAR",
             timezone: Optional[str] = None,
             offset: Optional[str] = None,
+            from_timestamp: Optional[Union[datetime, date]] = None,
+            to_timestamp: Optional[Union[datetime, date]] = None,
     ) -> QDBSelect:
         """Add a SAMPLE BY clause.
 
@@ -84,7 +91,7 @@ class QDBSelect(StandardSelect):
 
         # Set the sample by clause
         s._sample_by_clause = SampleByClause(
-            value, unit, fill, align_to, timezone, offset
+            value, unit, fill, align_to, timezone, offset, from_timestamp, to_timestamp
         )
         return s
 

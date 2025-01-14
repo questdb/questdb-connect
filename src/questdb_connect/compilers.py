@@ -41,6 +41,12 @@ class QDBSQLCompiler(sqlalchemy.sql.compiler.SQLCompiler, abc.ABC):
         else:
             text = f"SAMPLE BY {sample_by.value}"
 
+        if sample_by.from_timestamp:
+            # Format datetime to ISO format that QuestDB expects
+            text += f" FROM '{sample_by.from_timestamp.isoformat()}'"
+        if sample_by.to_timestamp:
+            text += f" TO '{sample_by.to_timestamp.isoformat()}'"
+
         # Add FILL if specified
         if sample_by.fill is not None:
             if isinstance(sample_by.fill, str):

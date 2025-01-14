@@ -416,6 +416,108 @@ def test_bulk_insert(test_engine, test_model):
         assert collect_select_all_raw_connection(test_engine, expected_rows=num_rows) == expected
 
 
+def test_sample_by_from_to(test_engine, test_model):
+    """Test SAMPLE BY with FROM-TO extension."""
+    base_ts = datetime.datetime(2023, 4, 12, 0, 0, 0)
+    day_before = base_ts - datetime.timedelta(days=1)
+    day_after = base_ts + datetime.timedelta(days=1)
+    session = Session(test_engine)
+    try:
+        num_rows = 6 # 6 hours only
+        models = [
+            test_model(
+                col_int=idx,
+                col_ts=base_ts + datetime.timedelta(hours=idx),
+            ) for idx in range(num_rows)
+        ]
+
+        session.bulk_save_objects(models)
+        session.commit()
+
+        metadata = sqla.MetaData()
+        table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
+        wait_until_table_is_ready(test_engine, ALL_TYPES_TABLE_NAME, len(models))
+
+        with test_engine.connect() as conn:
+            # Test FROM-TO with FILL
+            query = (
+                questdb_connect.select(
+                    table.c.col_ts,
+                    sqla.func.avg(table.c.col_int).label('avg_int')
+                )
+                .sample_by(
+                    1, 'h',
+                    fill="NULL",
+                    from_timestamp=day_before,  # day before data starts
+                    to_timestamp=day_after  # day after data ends
+                )
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+
+            assert len(rows) == 48  # 48 hours in total
+
+            # First rows should be NULL (before our data starts)
+            assert rows[0].avg_int is None
+            assert rows[1].avg_int is None
+            assert rows[2].avg_int is None
+            assert rows[3].avg_int is None
+
+            # Middle rows should have data
+            assert any(row.avg_int is not None for row in rows[4:-4])
+
+            # Last rows should be NULL (after our data ends)
+            assert rows[-4].avg_int is None
+            assert rows[-3].avg_int is None
+            assert rows[-2].avg_int is None
+            assert rows[-1].avg_int is None
+
+            # Test FROM only
+            query = (
+                questdb_connect.select(
+                    table.c.col_ts,
+                    sqla.func.avg(table.c.col_int).label('avg_int')
+                )
+                .sample_by(
+                    1, 'h',
+                    fill="NULL",
+                    from_timestamp=day_before  # day before data starts
+                )
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+
+            # First rows should be NULL
+            assert rows[0].avg_int is None
+            assert rows[1].avg_int is None
+            assert rows[2].avg_int is None
+            assert rows[3].avg_int is None
+
+            # Test TO only
+            query = (
+                questdb_connect.select(
+                    table.c.col_ts,
+                    sqla.func.avg(table.c.col_int).label('avg_int')
+                )
+                .sample_by(
+                    1, 'h',
+                    fill="NULL",
+                    to_timestamp=day_after  # day after data ends
+                )
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+
+            # Last rows should be NULL
+            assert rows[-4].avg_int is None
+            assert rows[-3].avg_int is None
+            assert rows[-2].avg_int is None
+            assert rows[-1].avg_int is None
+
+    finally:
+        if session:
+            session.close()
+
 def test_sample_by_options(test_engine, test_model):
     """Test SAMPLE BY with ALIGN TO and FILL options."""
     base_ts = datetime.datetime(2023, 4, 12, 0, 0, 0)
