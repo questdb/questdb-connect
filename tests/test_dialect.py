@@ -516,6 +516,40 @@ def test_sample_by_from_to(test_engine, test_model):
         if session:
             session.close()
 
+def test_plain_select_core_api(test_engine, test_model):
+    """
+    Test plain select with core API. Plain select means select implementation from sqlalchemy.sql.selectable,
+    not from questdb_connect.
+    """
+
+    session = Session(test_engine)
+    try:
+        num_rows = 3
+        models = [
+            test_model(
+                col_int=idx,
+                col_ts=datetime.datetime(2023, 4, 12, 0, 0, 0) + datetime.timedelta(hours=idx),
+            ) for idx in range(num_rows)
+        ]
+        session.bulk_save_objects(models)
+        session.commit()
+
+        metadata = sqla.MetaData()
+        table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
+        wait_until_table_is_ready(test_engine, ALL_TYPES_TABLE_NAME, len(models))
+
+        with test_engine.connect() as conn:
+            query = (
+                # important: use sqla.select, not questdb_connect.select!
+                sqla.select(table.c.col_ts, table.c.col_int)
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 3
+    finally:
+        if session:
+            session.close()
+
 def test_sample_by_options(test_engine, test_model):
     """Test SAMPLE BY with ALIGN TO and FILL options."""
     base_ts = datetime.datetime(2023, 4, 12, 0, 0, 0)

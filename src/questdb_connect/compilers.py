@@ -72,7 +72,7 @@ class QDBSQLCompiler(sqlalchemy.sql.compiler.SQLCompiler, abc.ABC):
         text = ""
 
         # Add SAMPLE BY first if present
-        if select._sample_by_clause is not None:
+        if _has_sample_by(select):
             text += " " + self.process(select._sample_by_clause, **kw)
 
         # Use parent's GROUP BY implementation
@@ -88,7 +88,7 @@ class QDBSQLCompiler(sqlalchemy.sql.compiler.SQLCompiler, abc.ABC):
         # If we have SAMPLE BY but no GROUP BY,
         # add a dummy GROUP BY clause to trigger the rendering
         if (
-                select._sample_by_clause is not None
+                _has_sample_by(select)
                 and not select._group_by_clauses
         ):
             select = select._clone()
@@ -103,3 +103,6 @@ class QDBSQLCompiler(sqlalchemy.sql.compiler.SQLCompiler, abc.ABC):
     def visit_textclause(self, textclause, add_to_result_map=None, **kw):
         textclause.text = remove_public_schema(textclause.text)
         return super().visit_textclause(textclause, add_to_result_map, **kw)
+
+def _has_sample_by(select):
+    return hasattr(select, '_sample_by_clause') and select._sample_by_clause is not None
