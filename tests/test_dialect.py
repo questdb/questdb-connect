@@ -9,7 +9,8 @@ from tests.conftest import (
     ALL_TYPES_TABLE_NAME,
     METRICS_TABLE_NAME,
     collect_select_all,
-    collect_select_all_raw_connection, wait_until_table_is_ready,
+    collect_select_all_raw_connection,
+    wait_until_table_is_ready,
 )
 
 
