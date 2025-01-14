@@ -19,10 +19,18 @@ class SampleByClause(ClauseElement):
     def __init__(
             self,
             value: Union[int, float],
-            unit: Optional[str] = None
+            unit: Optional[str] = None,
+            fill: Optional[Union[str, float]] = None,
+            align_to: str = "CALENDAR",  # default per docs
+            timezone: Optional[str] = None,
+            offset: Optional[str] = None,
     ):
         self.value = value
         self.unit = unit.lower() if unit else None
+        self.fill = fill
+        self.align_to = align_to.upper()
+        self.timezone = timezone
+        self.offset = offset
 
     def __str__(self) -> str:
         if self.unit:
@@ -54,35 +62,30 @@ class QDBSelect(StandardSelect):
     def sample_by(
             self,
             value: Union[int, float],
-            unit: Optional[str] = None
+            unit: Optional[str] = None,
+            fill: Optional[Union[str, float]] = None,
+            align_to: str = "CALENDAR",
+            timezone: Optional[str] = None,
+            offset: Optional[str] = None,
     ) -> QDBSelect:
-        """Add a SAMPLE BY clause to the select statement.
+        """Add a SAMPLE BY clause.
 
-        The SAMPLE BY clause allows time-based sampling of data.
-
-        :param value:
-            For time-based sampling: the time interval
-
-
-        :param unit:
-            Time unit for sampling:
-            - 's': seconds
-            - 'm': minutes
-            - 'h': hours
-            - 'd': days
-
-        Example time-based sampling::
-
-            select([table.c.value]).sample_by(1, 'h')  # sample every hour
-            select([table.c.value]).sample_by(30, 'm')  # sample every 30 minutes
-
+        :param value: time interval value
+        :param unit: 's' for seconds, 'm' for minutes, 'h' for hours, etc.
+        :param fill: fill strategy - NONE, NULL, PREV, LINEAR, or constant value
+        :param align_to: CALENDAR or FIRST OBSERVATION
+        :param timezone: Optional timezone for calendar alignment
+        :param offset: Optional offset in format '+/-HH:mm'
         """
+
         # Create a copy of our object with _generative
         s = self.__class__.__new__(self.__class__)
         s.__dict__ = self.__dict__.copy()
 
         # Set the sample by clause
-        s._sample_by_clause = SampleByClause(value, unit)
+        s._sample_by_clause = SampleByClause(
+            value, unit, fill, align_to, timezone, offset
+        )
         return s
 
 
