@@ -33,9 +33,33 @@ class QDBDDLCompiler(sqlalchemy.sql.compiler.DDLCompiler, abc.ABC):
 class QDBSQLCompiler(sqlalchemy.sql.compiler.SQLCompiler, abc.ABC):
     def visit_sample_by(self, sample_by, **kw):
         """Compile a SAMPLE BY clause."""
+        text = ""
+
+        # Basic SAMPLE BY
         if sample_by.unit:
-            return f"SAMPLE BY {sample_by.value}{sample_by.unit}"
-        return f"SAMPLE BY {sample_by.value}"
+            text = f"SAMPLE BY {sample_by.value}{sample_by.unit}"
+        else:
+            text = f"SAMPLE BY {sample_by.value}"
+
+        # Add FILL if specified
+        if sample_by.fill is not None:
+            if isinstance(sample_by.fill, str):
+                text += f" FILL({sample_by.fill})"
+            else:
+                text += f" FILL({sample_by.fill:g})"
+
+        # Add ALIGN TO clause
+        text += f" ALIGN TO {sample_by.align_to}"
+
+        # Add TIME ZONE if specified
+        if sample_by.timezone:
+            text += f" TIME ZONE '{sample_by.timezone}'"
+
+        # Add WITH OFFSET if specified
+        if sample_by.offset:
+            text += f" WITH OFFSET '{sample_by.offset}'"
+
+        return text
 
     def group_by_clause(self, select, **kw):
         """Customize GROUP BY to also render SAMPLE BY."""

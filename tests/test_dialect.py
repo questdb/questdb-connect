@@ -416,6 +416,97 @@ def test_bulk_insert(test_engine, test_model):
         assert collect_select_all_raw_connection(test_engine, expected_rows=num_rows) == expected
 
 
+def test_sample_by_options(test_engine, test_model):
+    """Test SAMPLE BY with ALIGN TO and FILL options."""
+    base_ts = datetime.datetime(2023, 4, 12, 0, 0, 0)
+    session = Session(test_engine)
+    try:
+        # Insert test data - one row every hour for a day
+        num_rows = 24
+        models = [
+            test_model(
+                col_int=idx,
+                col_ts=base_ts + datetime.timedelta(hours=idx),
+            ) for idx in range(num_rows)
+        ]
+        # Add some gaps by removing every 3rd record
+        models = [m for i, m in enumerate(models) if i % 3 != 0]
+
+        session.bulk_save_objects(models)
+        session.commit()
+
+        metadata = sqla.MetaData()
+        table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
+        wait_until_table_is_ready(test_engine, ALL_TYPES_TABLE_NAME, len(models))
+
+        with test_engine.connect() as conn:
+            # Test FILL(NULL)
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(15, 'm', fill="NULL")
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 89
+            # Should have NULLs for missing data points
+            assert any(row.avg_int is None for row in rows)
+
+
+            # Test FILL(PREV)
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(15, 'm', fill="PREV")
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert all(row.avg_int is not None for row in rows)
+
+            # Test FILL with constant
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(15, 'm', fill=999.99)
+                .limit(10)
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert any(row.avg_int == 999.99 for row in rows)
+
+            # Test ALIGN TO FIRST OBSERVATION
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(15, 'm', align_to="FIRST OBSERVATION")
+                .limit(10)
+            )
+            result = conn.execute(query)
+            first_row = result.fetchone()
+            # First timestamp should match our first data point
+            assert first_row.col_ts == models[0].col_ts
+
+            # Test with timezone
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(1, 'd', align_to="CALENDAR", timezone="Europe/Prague")
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            # First row should be at midnight Prague time, that is 22:00 UTC the previous day
+            assert rows[0].col_ts.hour == 22
+            assert rows[1].col_ts.hour == 22
+
+            # Test with offset
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(1, 'd', align_to="CALENDAR", offset="02:00")
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            # First row should start at 02:00
+            assert rows[0].col_ts.hour == 2
+
+    finally:
+        if session:
+            session.close()
+
 def test_dialect_get_schema_names(test_engine):
     dialect = qdbc.QuestDBDialect()
     with test_engine.connect() as conn:
