@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, date
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
 from sqlalchemy import select as sa_select
@@ -8,6 +7,8 @@ from sqlalchemy.sql import ClauseElement
 from sqlalchemy.sql import Select as StandardSelect
 
 if TYPE_CHECKING:
+    from datetime import date, datetime
+
     from sqlalchemy.sql.visitors import Visitable
 
 

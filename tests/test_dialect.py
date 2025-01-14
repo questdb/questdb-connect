@@ -1,7 +1,5 @@
 import datetime
 
-from sqlglot import subquery
-
 import questdb_connect
 import questdb_connect as qdbc
 import sqlalchemy as sqla
