@@ -1,4 +1,5 @@
 import os
+import time
 from typing import NamedTuple
 
 import pytest
@@ -124,6 +125,32 @@ def collect_select_all(session, expected_rows) -> str:
         rs = session.execute(text(f'select * from public.{ALL_TYPES_TABLE_NAME} order by 1 asc'))
         if rs.rowcount == expected_rows:
             return '\n'.join(str(row) for row in rs)
+
+def wait_until_table_is_ready(test_engine, table_name, expected_rows, timeout=10):
+    """
+    Wait until a table has the expected number of rows, with timeout.
+    Args:
+        test_engine: SQLAlchemy engine
+        table_name: Name of the table to check
+        expected_rows: Expected number of rows
+        timeout: Maximum time to wait in seconds (default: 10 seconds)
+    Returns:
+        bool: True if table is ready, False if timeout occurred
+    Raises:
+        sqlalchemy.exc.SQLAlchemyError: If there's a database error
+    """
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        with test_engine.connect() as conn:
+            result = conn.execute(text(f'SELECT count(*) FROM {table_name}'))
+            row = result.fetchone()
+            if row and row[0] == expected_rows:
+                return True
+
+            print(f'Waiting for table {table_name} to have {expected_rows} rows, current: {row[0] if row else 0}')
+            time.sleep(0.01)  # Wait 10ms between checks
+    return False
 
 
 def collect_select_all_raw_connection(test_engine, expected_rows) -> str:
