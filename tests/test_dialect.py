@@ -97,6 +97,31 @@ def test_sample_by_clause(test_engine, test_model):
             rows = result.fetchall()
             assert len(rows) == 3  # Should limit to first 3 samples
 
+            # SAMPLE BY with GROUP BY, ORDER BY and LIMIT
+            query = (
+                questdb_connect.select(table.c.col_ts, sqla.func.avg(table.c.col_int).label('avg_int'))
+                .sample_by(30, 'm')  # 15 minute samples
+                .group_by(table.c.col_int)
+                .order_by(table.c.col_int.desc())
+                .limit(3)
+            )
+            result = conn.execute(query)
+            rows = result.fetchall()
+            assert len(rows) == 3  # Should limit to first 3 samples
+            # expected results:
+            # 2023-04-12T01:30:00.000000Z, 119
+            # 2023-04-12T01:30:00.000000Z, 118
+            # 2023-04-12T01:30:00.000000Z, 117
+            assert rows[0].col_ts == datetime.datetime(2023, 4, 12, 1, 30)
+            assert rows[0].avg_int == 119
+
+            assert rows[1].col_ts == datetime.datetime(2023, 4, 12, 1, 30)
+            assert rows[1].avg_int == 118
+
+            assert rows[2].col_ts == datetime.datetime(2023, 4, 12, 1, 30)
+            assert rows[2].avg_int == 117
+
+
     finally:
         if session:
             session.close()
