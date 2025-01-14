@@ -1,5 +1,7 @@
 import datetime
 
+from sqlglot import subquery
+
 import questdb_connect
 import questdb_connect as qdbc
 import sqlalchemy as sqla
@@ -13,6 +15,87 @@ from tests.conftest import (
     wait_until_table_is_ready,
 )
 
+
+def test_sample_by_in_subquery(test_engine, test_model):
+    """Test SAMPLE BY usage within subqueries."""
+    base_ts = datetime.datetime(2023, 4, 12, 0, 0, 0)
+    session = Session(test_engine)
+    try:
+        # Insert test data - one row every minute for 2 hours
+        num_rows = 120  # 2 hours * 60 minutes
+        models = [
+            test_model(
+                col_boolean=True,
+                col_byte=8,
+                col_short=12,
+                col_int=idx,
+                col_long=14,
+                col_float=15.234,
+                col_double=16.88993244,
+                col_symbol='coconut',
+                col_string='banana',
+                col_char='C',
+                col_uuid='6d5eb038-63d1-4971-8484-30c16e13de5b',
+                col_date=base_ts.date(),
+                col_ts=base_ts + datetime.timedelta(minutes=idx),
+                col_geohash='dfvgsj2vptwu',
+                col_long256='0xa3b400fcf6ed707d710d5d4e672305203ed3cc6254d1cefe313e4a465861f42a',
+                col_varchar='pineapple'
+            ) for idx in range(num_rows)
+        ]
+        session.bulk_save_objects(models)
+        session.commit()
+
+        metadata = sqla.MetaData()
+        table = sqla.Table(ALL_TYPES_TABLE_NAME, metadata, autoload_with=test_engine)
+        wait_until_table_is_ready(test_engine, ALL_TYPES_TABLE_NAME, num_rows)
+
+        with test_engine.connect() as conn:
+            # Subquery with SAMPLE BY
+            subq = (
+                questdb_connect.select(
+                    table.c.col_ts,
+                    sqla.func.avg(table.c.col_int).label('avg_int')
+                )
+                .sample_by(30, 'm')  # 30 minute samples in subquery
+                .subquery()
+            )
+
+            # Main query selecting from subquery with extra conditions
+            query = (
+                questdb_connect.select(
+                    subq.c.col_ts,
+                    subq.c.avg_int
+                )
+                .where(subq.c.avg_int > 30)
+                .order_by(subq.c.col_ts)
+            )
+
+            result = conn.execute(query)
+            rows = result.fetchall()
+
+            # Should only get samples from second half of the data
+            # where averages are > 30
+            assert len(rows) == 3  # expecting 2 30-min samples > 30
+            assert all(row.avg_int > 30 for row in rows)
+            assert rows[0].avg_int < rows[1].avg_int  # ordered by timestamp
+
+            # Test nested aggregation
+            outer_query = (
+                questdb_connect.select(
+                    sqla.func.sum(subq.c.avg_int).label('total_avg')
+                )
+                .select_from(subq)
+            )
+
+            result = conn.execute(outer_query)
+            row = result.fetchone()
+            # Sum of all 30-min sample averages
+            assert row.total_avg == 238;
+
+    finally:
+        if session:
+            session.close()
 
 def test_sample_by_clause(test_engine, test_model):
     """Test SAMPLE BY clause functionality."""
@@ -120,8 +203,6 @@ def test_sample_by_clause(test_engine, test_model):
 
             assert rows[2].col_ts == datetime.datetime(2023, 4, 12, 1, 30)
             assert rows[2].avg_int == 117
-
-
     finally:
         if session:
             session.close()
