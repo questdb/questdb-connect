@@ -244,6 +244,8 @@ def test_dialect_has_table(test_engine):
                 raise AssertionError()
             if not dialect.has_table(conn, table_name, schema="public"):
                 raise AssertionError()
+            if not dialect.has_table(conn, table_name, schema="questdb", kw={'key': "value"}):
+                raise AssertionError()
 
 
 def test_functions(test_engine):
