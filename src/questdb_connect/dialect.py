@@ -73,6 +73,10 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
 
         return dbapi
 
+    @classmethod
+    def import_dbapi(cls):
+        return cls.dbapi()
+
     def get_schema_names(self, conn, **kw):
         return ["public"]
 
