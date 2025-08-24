@@ -271,7 +271,6 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         database: Any,
         table_name: str,
         engine: Engine,
-        schema: str | None = None,
         limit: int = 100,
         show_cols: bool = False,
         indent: bool = True,
@@ -294,7 +293,6 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
             database,
             table_name,
             engine,
-            None,
             limit,
             show_cols,
             indent,
@@ -332,6 +330,7 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         cls,
         cursor: Any,
         query: str,
+        database: Any,
         **kwargs: Any,
     ) -> None:
         """Execute a SQL query

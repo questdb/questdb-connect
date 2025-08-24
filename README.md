@@ -23,12 +23,12 @@ The Python module is available here:
 _Psycopg2_ is a widely used and trusted Python module for connecting to, and working with, QuestDB and other
 PostgreSQL databases.
 
-_SQLAlchemy_ is a SQL toolkit and ORM library for Python. It provides a high-level API for communicating with 
-relational databases, including schema creation and modification. The ORM layer abstracts away the complexities 
+_SQLAlchemy_ is a SQL toolkit and ORM library for Python. It provides a high-level API for communicating with
+relational databases, including schema creation and modification. The ORM layer abstracts away the complexities
 of the database, allowing developers to work with Python objects instead of raw SQL statements.
 
-_Apache Superset_ is an open-source business intelligence web application that enables users to visualize and 
-explore data through customizable dashboards and reports. It provides a rich set of data visualizations, including 
+_Apache Superset_ is an open-source business intelligence web application that enables users to visualize and
+explore data through customizable dashboards and reports. It provides a rich set of data visualizations, including
 charts, tables, and maps.
 
 ## Requirements
@@ -40,9 +40,10 @@ charts, tables, and maps.
 You need to install these packages because questdb-connect depends on them. Note that `questdb-connect` v1.1
 is compatible with both `SQLAlchemy` v1.4 and v2.0 while `questdb-connect` v1.0 is compatible with `SQLAlchemy` v1.4 only.
 
-## Versions 0.0.X
+## Versioning
 
-These are versions released for testing purposes.
+* 0.0.x: released for testing purposes.
+* v2: compatible with superset v5, incompatible with previous versions
 
 ## Installation
 
@@ -208,7 +209,7 @@ Composite keys can be used to define uniqueness based on multiple columns. This 
     * timestamp + instrument_id + exchange + side
 
 Deduplication is often enabled in QuestDB regardless of the primary key definition since
-it's required to avoid data duplication during ingestion. 
+it's required to avoid data duplication during ingestion.
 
 Example:
 ```python
