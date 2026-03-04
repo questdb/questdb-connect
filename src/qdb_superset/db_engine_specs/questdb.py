@@ -1,29 +1,31 @@
 from __future__ import annotations
 
+import logging
 import re
 from datetime import datetime
 from typing import Any
 
-import questdb_connect.types as qdbc_types
 from flask_babel import gettext as __
-from marshmallow import fields, Schema
-from questdb_connect.common import remove_public_schema
+from marshmallow import Schema, fields
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy.sql.expression import text, TextClause
+from sqlalchemy.sql.expression import TextClause, text
 from sqlalchemy.types import TypeEngine
-import logging
+
+import questdb_connect.types as qdbc_types
+from questdb_connect.common import remove_public_schema
 
 # Configure the logging
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
+from superset import sql_parse
 from superset.db_engine_specs.base import (
     BaseEngineSpec,
     BasicParametersMixin,
     BasicParametersType,
 )
-from superset import sql_parse
+from superset.sql.parse import Table
 from superset.utils import core as utils
 from superset.utils.core import GenericDataType
 
@@ -269,9 +271,8 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
     def select_star(  # pylint: disable=too-many-arguments
         cls,
         database: Any,
-        table_name: str,
+        table: Table,
         engine: Engine,
-        schema: str | None = None,
         limit: int = 100,
         show_cols: bool = False,
         indent: bool = True,
@@ -280,9 +281,8 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
     ) -> str:
         """Generate a "SELECT * from table_name" query with appropriate limit.
         :param database: Database instance
-        :param table_name: Table name, unquoted
+        :param table: Table instance
         :param engine: SqlAlchemy Engine instance
-        :param schema: Schema, unquoted
         :param limit: limit to impose on query
         :param show_cols: Show columns in query; otherwise use "*"
         :param indent: Add indentation to query
@@ -292,9 +292,8 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         """
         return super().select_star(
             database,
-            table_name,
+            Table(table=table.table, schema=None, catalog=table.catalog),
             engine,
-            None,
             limit,
             show_cols,
             indent,
@@ -332,16 +331,18 @@ class QuestDbEngineSpec(BaseEngineSpec, BasicParametersMixin):
         cls,
         cursor: Any,
         query: str,
+        database: Any,
         **kwargs: Any,
     ) -> None:
         """Execute a SQL query
         :param cursor: Cursor instance
         :param query: Query to execute
+        :param database: Database instance
         :param kwargs: kwargs to be passed to cursor.execute()
         :return:
         """
         try:
-            sql = sql_parse.strip_comments_from_sql(query)
+            sql = sql_parse.strip_comments_from_sql(query, engine=cls.engine)
             cursor.execute(sql)
         except Exception as ex:
             # Log the exception with traceback

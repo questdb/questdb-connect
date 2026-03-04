@@ -2,20 +2,15 @@
 
 These tests verify the SA 2.0 migration changes work correctly.
 """
-import questdb_connect as qdbc
 import sqlalchemy
-from questdb_connect.dialect import SA_V2, QuestDBDialect
+
+import questdb_connect as qdbc
+from questdb_connect.dialect import QuestDBDialect
 
 
 def test_import_dbapi():
     """import_dbapi() must exist and return the questdb_connect module."""
     dbapi = QuestDBDialect.import_dbapi()
-    assert dbapi is qdbc
-
-
-def test_dbapi_still_works():
-    """dbapi() must still work for SA 1.4 backward compat."""
-    dbapi = QuestDBDialect.dbapi()
     assert dbapi is qdbc
 
 
@@ -55,10 +50,7 @@ def test_create_superset_engine_no_deprecated_params(test_config):
         engine.dispose()
 
 
-def test_sa_version_detection():
-    """SA_V2 flag must match the installed SQLAlchemy version."""
+def test_sa2_required():
+    """SQLAlchemy 2.0+ must be installed."""
     major = int(sqlalchemy.__version__.split(".")[0])
-    if major >= 2:
-        assert SA_V2 is True
-    else:
-        assert SA_V2 is False
+    assert major >= 2
