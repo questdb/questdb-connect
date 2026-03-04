@@ -33,7 +33,7 @@ compose-down:
 	echo "y" | docker volume prune
 
 docker-test:
-	docker run -e QUESTDB_CONNECT_HOST='host.docker.internal' -e SQLALCHEMY_SILENCE_UBER_WARNING=1 questdb/questdb-connect:latest
+	docker run -e QUESTDB_CONNECT_HOST='host.docker.internal' questdb/questdb-connect:latest
 
 test:
 	python3 -m pytest

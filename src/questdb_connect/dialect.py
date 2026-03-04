@@ -1,6 +1,7 @@
 import abc
 
 import sqlalchemy
+from packaging.version import Version
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.sql.compiler import GenericTypeCompiler
 
@@ -9,7 +10,10 @@ from .identifier_preparer import QDBIdentifierPreparer
 from .inspector import QDBInspector
 
 # ===== SQLAlchemy Dialect ======
-# https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
+# https://docs.sqlalchemy.org/en/20/
+
+SA_VERSION = Version(sqlalchemy.__version__)
+SA_V2 = SA_VERSION >= Version("2.0")
 
 
 def connection_uri(
@@ -21,24 +25,32 @@ def connection_uri(
 def create_engine(
     host: str, port: str, username: str, password: str, database: str = "main"
 ):
+    kwargs = {
+        "hide_parameters": False,
+        "isolation_level": "REPEATABLE READ",
+    }
+    if not SA_V2:
+        kwargs["future"] = True
+        kwargs["implicit_returning"] = False
     return sqlalchemy.create_engine(
         connection_uri(host, port, username, password, database),
-        future=True,
-        hide_parameters=False,
-        implicit_returning=False,
-        isolation_level="REPEATABLE READ",
+        **kwargs,
     )
 
 
 def create_superset_engine(
     host: str, port: str, username: str, password: str, database: str = "main"
 ):
+    kwargs = {
+        "hide_parameters": False,
+        "isolation_level": "REPEATABLE READ",
+    }
+    if not SA_V2:
+        kwargs["future"] = False
+        kwargs["implicit_returning"] = True
     return sqlalchemy.create_engine(
         connection_uri(host, port, username, password, database),
-        future=False,
-        hide_parameters=False,
-        implicit_returning=True,
-        isolation_level="REPEATABLE READ",
+        **kwargs,
     )
 
 
@@ -72,6 +84,10 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
         import questdb_connect as dbapi
 
         return dbapi
+
+    @classmethod
+    def import_dbapi(cls):
+        return cls.dbapi()
 
     def get_schema_names(self, conn, **kw):
         return ["public"]
