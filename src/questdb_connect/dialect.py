@@ -9,7 +9,7 @@ from .identifier_preparer import QDBIdentifierPreparer
 from .inspector import QDBInspector
 
 # ===== SQLAlchemy Dialect ======
-# https://docs.sqlalchemy.org/en/14/ apache-superset requires SQLAlchemy 1.4
+# https://docs.sqlalchemy.org/en/20/
 
 
 def connection_uri(
@@ -23,9 +23,7 @@ def create_engine(
 ):
     return sqlalchemy.create_engine(
         connection_uri(host, port, username, password, database),
-        future=True,
         hide_parameters=False,
-        implicit_returning=False,
         isolation_level="REPEATABLE READ",
     )
 
@@ -35,9 +33,7 @@ def create_superset_engine(
 ):
     return sqlalchemy.create_engine(
         connection_uri(host, port, username, password, database),
-        future=False,
         hide_parameters=False,
-        implicit_returning=True,
         isolation_level="REPEATABLE READ",
     )
 
@@ -68,7 +64,7 @@ class QuestDBDialect(PGDialect_psycopg2, abc.ABC):
     supports_is_distinct_from = False
 
     @classmethod
-    def dbapi(cls):
+    def import_dbapi(cls):
         import questdb_connect as dbapi
 
         return dbapi

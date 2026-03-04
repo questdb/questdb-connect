@@ -1,7 +1,7 @@
 [project]
 # https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
 name = 'questdb-connect'
-version = '1.1.5' # Standalone production version (with engine)
+version = '2.0.0' # SA 2.0 + Superset 4.1+
 # version = '0.0.113' # testing version
 authors = [{ name = 'questdb.io', email = 'support@questdb.io' }]
 description = "SqlAlchemy library"
@@ -14,8 +14,13 @@ classifiers = [
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
 ]
-dependencies = []
+dependencies = [
+    'SQLAlchemy>=2.0',
+    'psycopg2-binary>=2.9',
+]
 
 [project.urls]
 'Homepage' = "https://github.com/questdb/questdb-connect/"
@@ -32,8 +37,8 @@ questdb = 'qdb_superset.db_engine_specs.questdb:QuestDbEngineSpec'
 [project.optional-dependencies]
 test = [
     'psycopg2-binary~=2.9.6',
-    'SQLAlchemy>=1.4, <2',
-    'apache-superset>=3.0.0',
+    'SQLAlchemy>=2.0',
+    'apache-superset>=4.1.0',
     'sqlparse==0.4.4',
     'pytest~=7.3.0',
     'pytest_mock~=3.11.1',
@@ -63,6 +68,7 @@ max-args = 10
 'tests/test_dialect.py' = ['S101', 'PLR2004']
 'tests/test_types.py' = ['S101']
 'tests/test_superset.py' = ['S101']
+'tests/test_sa2_compat.py' = ['S101', 'PLR2004']
 'tests/conftest.py' = ['S608']
 'src/examples/sqlalchemy_raw.py' = ['S608']
 'src/examples/server_utilisation.py' = ['S311']
